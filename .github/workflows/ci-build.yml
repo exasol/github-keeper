@@ -17,6 +17,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install dependencies
+        run: go get ./...
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:

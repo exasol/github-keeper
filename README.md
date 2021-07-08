@@ -7,7 +7,16 @@ Features:
 * List all Exasol repos where you are admin (`list-my-repos`)
 * Create / Update the branch protection for the default branch according to our standards (`create-branch-protection`)
 
-## Usage
+#### Installation
+
+1. Install Go language. Minimum version is 1.13. 
+2. Install dependendent packages: 
+```
+cd $HOME/<PATH TO THIS REPO>/product-integration-tool-chest/github-keeper
+go get ./...
+```
+
+#### Usage
 
 in the github-keeper directory run:
 
