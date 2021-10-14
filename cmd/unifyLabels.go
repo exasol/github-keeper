@@ -113,22 +113,32 @@ func (realRunModifer *RealLabelModifier) createLabel(labelDefinition *LabelDesc)
 }
 
 func (realRunModifer *RealLabelModifier) removeLabel(label *github.Label) {
-	realRunModifer.githubClient.Issues.DeleteLabel(context.Background(), "exasol", realRunModifer.repo, *label.Name)
+	_, err := realRunModifer.githubClient.Issues.DeleteLabel(context.Background(), "exasol", realRunModifer.repo, *label.Name)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to delete label '%s' for repo '%s'. Cause: '%s'", *label.Name, realRunModifer.repo, err.Error()))
+	}
 }
 
 func (realRunModifer *RealLabelModifier) renameLabel(label *github.Label, labelDefinition *LabelDesc) {
-	realRunModifer.updateLabel(label, labelDefinition)
+	err := realRunModifer.updateLabel(label, labelDefinition)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to rename label '%s' for repo '%s'. Cause: '%s'", *label.Name, realRunModifer.repo, err.Error()))
+	}
 }
 
 func (realRunModifer *RealLabelModifier) setColor(label *github.Label, labelDefinition *LabelDesc) {
-	realRunModifer.updateLabel(label, labelDefinition)
+	err := realRunModifer.updateLabel(label, labelDefinition)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to change color of label '%s' for repo '%s'. Cause: '%s'", *label.Name, realRunModifer.repo, err.Error()))
+	}
 }
 
-func (realRunModifer *RealLabelModifier) updateLabel(label *github.Label, labelDefinition *LabelDesc) {
+func (realRunModifer *RealLabelModifier) updateLabel(label *github.Label, labelDefinition *LabelDesc) error {
 	oldName := *label.Name
 	label.Name = &labelDefinition.name
 	label.Color = &labelDefinition.color
-	realRunModifer.githubClient.Issues.EditLabel(context.Background(), "exasol", realRunModifer.repo, oldName, label)
+	_, _, err := realRunModifer.githubClient.Issues.EditLabel(context.Background(), "exasol", realRunModifer.repo, oldName, label)
+	return err
 }
 
 func findLabelByName(name string, labels []*github.Label) *github.Label {
