@@ -54,7 +54,8 @@ func (suite *UnifyLablesSuite) TestChangeColor() {
 	githubClient := getGithubClient()
 	featureLabel := "feature"
 	otherColor := "112233"
-	githubClient.Issues.CreateLabel(context.Background(), testOrg, testRepo, &github.Label{Name: &featureLabel, Color: &otherColor})
+	_, _, err := githubClient.Issues.CreateLabel(context.Background(), testOrg, testRepo, &github.Label{Name: &featureLabel, Color: &otherColor})
+	onError(err)
 	unifyLabels(testRepo, githubClient, true)
 	label, _, err := githubClient.Issues.GetLabel(context.Background(), testOrg, testRepo, "feature")
 	onError(err)
