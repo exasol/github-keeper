@@ -67,7 +67,8 @@ func (suite *UnifyLablesSuite) TestDeleteLabel() {
 	defer cleanup() // to leave a clean repo
 	githubClient := getGithubClient()
 	unknownLabel := "unknown123"
-	githubClient.Issues.CreateLabel(context.Background(), testOrg, testRepo, &github.Label{Name: &unknownLabel})
+	_, _, err := githubClient.Issues.CreateLabel(context.Background(), testOrg, testRepo, &github.Label{Name: &unknownLabel})
+	onError(err)
 	unifyLabels(testRepo, githubClient, true) // should create labels
 	labels, _, err := githubClient.Issues.ListLabels(context.Background(), testOrg, testRepo, &github.ListOptions{PerPage: 100})
 	onError(err)
