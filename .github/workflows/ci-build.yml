@@ -34,6 +34,9 @@ jobs:
         with:
           version: v1.39
 
+      - name: Create credentials file
+        run: echo 'github_oauth_access_token=${{ secrets.GITHUB_TOKEN }}' > ~/.release-droid/credentials
+
       - name: test
         run: go test -coverprofile=coverage.out ./...
 
