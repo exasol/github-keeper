@@ -30,11 +30,9 @@ jobs:
         run: go get ./...
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
-        with:
-          version: v1.42.1
-          skip-go-installation: true
-          skip-pkg-cache: true
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.42.1
+          ~/go/bin/golangci-lint run
 
       - name: Create credentials file
         run: |
