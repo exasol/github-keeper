@@ -30,7 +30,7 @@ jobs:
       - name: Create credentials file
         run: |
           mkdir ~/.release-droid/
-          echo 'github_oauth_access_token=${{ secrets.GITHUB_TOKEN }}' > ~/.release-droid/credentials
+          echo 'github_oauth_access_token=${{ secrets.EXA_CI_2_TOKEN_FOR_UNIFYING_ISSUE_LABELS }}' > ~/.release-droid/credentials
 
       - name: test
         run: go test -coverprofile=coverage.out ./...
