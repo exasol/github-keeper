@@ -39,6 +39,11 @@ func unifyLabels(repo string, githubClient *github.Client, fix bool) {
 		{"security", "ee0000", []string{}, false}, //check if we can configure
 		{"blocked:yes", "000000", []string{"blocked", "status:blocked"}, true}}
 	labelModifier := getLabelModifier(fix, repo, githubClient)
+	checkForMissingLabels(repo, githubClient, labelDefinitions, labelModifier)
+	checkExistingLabels(repo, githubClient, labelDefinitions, labelModifier)
+}
+
+func checkForMissingLabels(repo string, githubClient *github.Client, labelDefinitions []*LabelDesc, labelModifier LablesModifier) {
 	labels := listLabels(repo, githubClient)
 	for _, label := range labels {
 		labelDesc := findLabelDefinitionByName(*label.Name, labelDefinitions)
@@ -51,7 +56,10 @@ func unifyLabels(repo string, githubClient *github.Client, fix bool) {
 			}
 		}
 	}
-	labels = listLabels(repo, githubClient) // list again to get renamed
+}
+
+func checkExistingLabels(repo string, githubClient *github.Client, labelDefinitions []*LabelDesc, labelModifier LablesModifier) {
+	labels := listLabels(repo, githubClient) // list again to get renamed
 	for _, labelDefinition := range labelDefinitions {
 		label := findLabelByName(labelDefinition.name, labels)
 		if label == nil {
