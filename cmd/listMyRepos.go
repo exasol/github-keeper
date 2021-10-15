@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v39/github"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +22,7 @@ var listMyReposCmd = &cobra.Command{
 				panic("Failed to list repositories. Cause: " + err.Error())
 			}
 			for _, repo := range repos {
-				if (*repo.Permissions)["admin"] {
+				if (repo.Permissions)["admin"] {
 					fmt.Print(" " + *repo.Name)
 				}
 			}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v39/github"
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +17,6 @@ var branchProtectionCmd = &cobra.Command{
 		for _, repo := range args {
 			createBranchProtection(repo, client)
 		}
-
 	},
 }
 

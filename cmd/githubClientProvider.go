@@ -7,7 +7,7 @@ import (
 	"path"
 
 	"github.com/alyu/configparser"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v39/github"
 	"golang.org/x/oauth2"
 )
 
