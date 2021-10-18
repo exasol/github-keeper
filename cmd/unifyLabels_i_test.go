@@ -8,9 +8,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const testOrg = "exasol"
-const testRepo = "testing-release-robot"
-
 type UnifyLablesSuite struct {
 	suite.Suite
 }
@@ -20,8 +17,8 @@ func TestUnifyLablesSuite(t *testing.T) {
 }
 
 func (suite *UnifyLablesSuite) TestCreateLables() {
-	cleanup()       // to be sure we start with a defined state
-	defer cleanup() // to leave a clean repo
+	suite.cleanup()       // to be sure we start with a defined state
+	defer suite.cleanup() // to leave a clean repo
 	githubClient := getGithubClient()
 	unifyLabels(testRepo, githubClient, true) // should create labels
 	label, _, err := githubClient.Issues.GetLabel(context.Background(), testOrg, testRepo, "feature")
@@ -31,8 +28,8 @@ func (suite *UnifyLablesSuite) TestCreateLables() {
 }
 
 func (suite *UnifyLablesSuite) TestRenameLabel() {
-	cleanup()       // to be sure we start with a defined state
-	defer cleanup() // to leave a clean repo
+	suite.cleanup()       // to be sure we start with a defined state
+	defer suite.cleanup() // to leave a clean repo
 	githubClient := getGithubClient()
 	labelName := "blocked"
 	issueName := "TestIssue"
@@ -49,8 +46,8 @@ func (suite *UnifyLablesSuite) TestRenameLabel() {
 }
 
 func (suite *UnifyLablesSuite) TestChangeColor() {
-	cleanup()       // to be sure we start with a defined state
-	defer cleanup() // to leave a clean repo
+	suite.cleanup()       // to be sure we start with a defined state
+	defer suite.cleanup() // to leave a clean repo
 	githubClient := getGithubClient()
 	featureLabel := "feature"
 	otherColor := "112233"
@@ -64,8 +61,8 @@ func (suite *UnifyLablesSuite) TestChangeColor() {
 }
 
 func (suite *UnifyLablesSuite) TestDeleteLabel() {
-	cleanup()       // to be sure we start with a defined state
-	defer cleanup() // to leave a clean repo
+	suite.cleanup()       // to be sure we start with a defined state
+	defer suite.cleanup() // to leave a clean repo
 	githubClient := getGithubClient()
 	unknownLabel := "unknown123"
 	_, _, err := githubClient.Issues.CreateLabel(context.Background(), testOrg, testRepo, &github.Label{Name: &unknownLabel})
@@ -80,12 +77,12 @@ func (suite *UnifyLablesSuite) TestDeleteLabel() {
 	suite.Assert().NotContains(labelNames, unknownLabel)
 }
 
-func cleanup() {
-	deleteAllLabels()
-	closeAllIssues()
+func (suite *UnifyLablesSuite) cleanup() {
+	suite.deleteAllLabels()
+	suite.closeAllIssues()
 }
 
-func deleteAllLabels() {
+func (suite *UnifyLablesSuite) deleteAllLabels() {
 	githubClient := getGithubClient()
 	labels, _, err := githubClient.Issues.ListLabels(context.Background(), testOrg, testRepo, &github.ListOptions{PerPage: 100})
 	onError(err)
@@ -95,7 +92,7 @@ func deleteAllLabels() {
 	}
 }
 
-func closeAllIssues() {
+func (suite *UnifyLablesSuite) closeAllIssues() {
 	githubClient := getGithubClient()
 	issues, _, err := githubClient.Issues.ListByRepo(context.Background(), testOrg, testRepo, &github.IssueListByRepoOptions{ListOptions: github.ListOptions{PerPage: 100}})
 	onError(err)
