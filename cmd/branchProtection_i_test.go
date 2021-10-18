@@ -22,7 +22,7 @@ func (suite *BranchProtectionSuite) TestCreateBranchProtection() {
 	githubClient := getGithubClient()
 	createBranchProtection(testRepo, githubClient)
 	protection, _, err := githubClient.Repositories.GetBranchProtection(context.Background(), testOrg, testRepo, "master")
-	onError(err)
+	suite.NoError(err)
 	suite.Assert().False(protection.AllowForcePushes.Enabled)
 	suite.Assert().True(protection.RequiredPullRequestReviews.DismissStaleReviews)
 	suite.Assert().True(protection.RequiredPullRequestReviews.RequireCodeOwnerReviews)
@@ -37,7 +37,7 @@ func (suite *BranchProtectionSuite) cleanup() {
 		if strings.Contains(err.Error(), "Branch not protected") {
 			//ignore
 		} else {
-			onError(err)
+			suite.NoError(err)
 		}
 	}
 }
