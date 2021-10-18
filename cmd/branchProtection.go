@@ -36,6 +36,7 @@ func createBranchProtection(repoName string, client *github.Client) {
 }
 
 func createProtectionRequest() github.ProtectionRequest {
+	allowForcePushes := false
 	return github.ProtectionRequest{
 		RequiredStatusChecks: &github.RequiredStatusChecks{
 			Strict:   true,
@@ -46,8 +47,9 @@ func createProtectionRequest() github.ProtectionRequest {
 			RequireCodeOwnerReviews:      true,
 			RequiredApprovingReviewCount: 1,
 		},
-		EnforceAdmins: false,
-		Restrictions:  nil,
+		EnforceAdmins:    false,
+		Restrictions:     nil,
+		AllowForcePushes: &allowForcePushes,
 	}
 }
 
