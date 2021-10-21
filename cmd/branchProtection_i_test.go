@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/spf13/cobra"
 	"strings"
 	"testing"
 
@@ -20,8 +21,7 @@ func (suite *BranchProtectionSuite) TestCreateBranchProtection() {
 	suite.cleanup()
 	defer suite.cleanup()
 	githubClient := getGithubClient()
-	verifier := BranchProtectionVerifier{repoName: testRepo, client: githubClient}
-	verifier.createBranchProtection()
+	branchProtectionCmd.Run(&cobra.Command{}, []string{testRepo})
 	protection, _, err := githubClient.Repositories.GetBranchProtection(context.Background(), testOrg, testRepo, "master")
 	suite.NoError(err)
 	suite.Assert().False(protection.AllowForcePushes.Enabled)
