@@ -10,12 +10,16 @@ Features:
 
 ## Installation
 
-1. Install Go language. Minimum version is 1.13. 
+1. Install Go language. Minimum version is 1.13.
+    * On Debian / Ubuntu:
+        ```sh
+        sudo apt install golang-go
+        ```
 2. Install dependendent packages: 
-```
-cd $HOME/<PATH TO THIS REPO>/product-integration-tool-chest/github-keeper
-go get ./...
-```
+    ```
+    cd $HOME/<PATH TO THIS REPO>/
+    go get ./...
+    ```
 
 ## Usage
 
