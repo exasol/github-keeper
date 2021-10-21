@@ -97,7 +97,7 @@ func (verifier BranchProtectionVerifier) getChecksForWorkflow(workflowFilePath *
 	_, foundPush := parsedYaml.On["push"]
 	_, foundPullRequest := parsedYaml.On["pull_request"]
 	if foundPush || foundPullRequest {
-		for jobName, _ := range parsedYaml.Jobs {
+		for jobName := range parsedYaml.Jobs {
 			result = append(result, jobName)
 		}
 	}
