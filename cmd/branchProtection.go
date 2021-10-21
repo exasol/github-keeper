@@ -33,7 +33,7 @@ func (verifier BranchProtectionVerifier) createBranchProtection() {
 	if err != nil {
 		panic(fmt.Sprintf("Failed to create branch protection for exasol/%v/%v. Cause: %v", verifier.repoName, branch, err.Error()))
 	} else {
-		fmt.Printf("Sucessfully updated branch protection for %v.\n", verifier.repoName)
+		fmt.Printf("Sucessfully updated branch protection for exasol/%v/%v.\n", verifier.repoName, branch)
 	}
 }
 
@@ -86,7 +86,7 @@ func (verifier BranchProtectionVerifier) getRequiredChecks() (result []string, e
 
 func (verifier BranchProtectionVerifier) getChecksForWorkflow(workflowFilePath *string) ([]string, error) {
 	var result []string
-	content, err := verifier.downloadWorkflowFile(*workflowFilePath)
+	content, err := verifier.downloadFile(*workflowFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (verifier BranchProtectionVerifier) getChecksForWorkflow(workflowFilePath *
 	return result, nil
 }
 
-func (verifier BranchProtectionVerifier) downloadWorkflowFile(path string) (string, error) {
+func (verifier BranchProtectionVerifier) downloadFile(path string) (string, error) {
 	workflowFile, _, _, err := verifier.client.Repositories.GetContents(context.Background(), "exasol", verifier.repoName, path, &github.RepositoryContentGetOptions{})
 	if err != nil {
 		return "", err
@@ -112,13 +112,13 @@ func (verifier BranchProtectionVerifier) downloadWorkflowFile(path string) (stri
 	return workflowFile.GetContent()
 }
 
-func (verifier BranchProtectionVerifier) parseWorkflowDefinition(content string) (workflowDefinition, error) {
+func (verifier BranchProtectionVerifier) parseWorkflowDefinition(content string) (*workflowDefinition, error) {
 	parsedYaml := workflowDefinition{}
 	err := yaml.Unmarshal([]byte(content), &parsedYaml)
 	if err != nil {
-		return parsedYaml, err
+		return nil, err
 	}
-	return parsedYaml, nil
+	return &parsedYaml, nil
 }
 
 type workflowDefinition struct {
