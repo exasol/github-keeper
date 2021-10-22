@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/spf13/cobra"
 	"strings"
 	"testing"
 
@@ -20,7 +21,7 @@ func (suite *BranchProtectionSuite) TestCreateBranchProtection() {
 	suite.cleanup()
 	defer suite.cleanup()
 	githubClient := getGithubClient()
-	createBranchProtection(testRepo, githubClient)
+	branchProtectionCmd.Run(&cobra.Command{}, []string{testRepo})
 	protection, _, err := githubClient.Repositories.GetBranchProtection(context.Background(), testOrg, testRepo, "master")
 	suite.NoError(err)
 	suite.Assert().False(protection.AllowForcePushes.Enabled)
@@ -28,6 +29,7 @@ func (suite *BranchProtectionSuite) TestCreateBranchProtection() {
 	suite.Assert().True(protection.RequiredPullRequestReviews.RequireCodeOwnerReviews)
 	suite.Assert().Equal(protection.RequiredPullRequestReviews.RequiredApprovingReviewCount, 1)
 	suite.Assert().True(protection.RequiredStatusChecks.Strict)
+	suite.Assert().Contains(protection.RequiredStatusChecks.Contexts, "linkChecker")
 }
 
 func (suite *BranchProtectionSuite) cleanup() {
