@@ -177,42 +177,33 @@ func (verifier BranchProtectionVerifier) getRequiredChecks() (result []string, e
 }
 
 func (verifier BranchProtectionVerifier) getChecksForWorkflow(workflowFilePath *string) ([]string, error) {
-	var result []string
 	content, err := verifier.downloadFile(*workflowFilePath)
 	if err != nil {
 		return nil, err
 	}
-	parsedYaml, err := verifier.parseWorkflowDefinition(content)
+	return verifier.getChecksForWorkflowContent(content)
+}
+
+func (verifier BranchProtectionVerifier) getChecksForWorkflowContent(content string) ([]string, error) {
+	var result []string
+	workflow, err := verifier.parseWorkflowDefinition(content)
 	if err != nil {
 		return nil, err
 	}
-	hasWorkflowPushOrPrTrigger, err := verifier.hasWorkflowPushOrPrTrigger(parsedYaml)
-	if err != nil {
-		return nil, err
-	}
+	hasWorkflowPushOrPrTrigger := verifier.hasWorkflowPushOrPrTrigger(workflow)
 	if hasWorkflowPushOrPrTrigger {
-		for jobName := range parsedYaml.Jobs {
-			result = append(result, jobName)
-		}
+		return workflow.JobsNames, nil
 	}
 	return result, nil
 }
 
-func (verifier BranchProtectionVerifier) hasWorkflowPushOrPrTrigger(parsedYaml *workflowDefinition) (bool, error) {
-	if triggerMap, hasTriggerMap := parsedYaml.On.(map[interface{}]interface{}); hasTriggerMap {
-		_, foundPush := triggerMap["push"]
-		_, foundPullRequest := triggerMap["pull_request"]
-		return foundPush || foundPullRequest, nil
-	} else if triggerList, hasTriggerList := parsedYaml.On.([]interface{}); hasTriggerList {
-		for _, trigger := range triggerList {
-			if trigger == "push" || trigger == "pull_request" {
-				return true, nil
-			}
+func (verifier BranchProtectionVerifier) hasWorkflowPushOrPrTrigger(parsedYaml *workflowDefinition) bool {
+	for _, trigger := range parsedYaml.Trigger {
+		if trigger == "push" || trigger == "pull_request" {
+			return true
 		}
-		return false, nil
-	} else {
-		return false, fmt.Errorf("the GitHub workflow '%v' has a unimplemented trigger definition style", parsedYaml.Name)
 	}
+	return false
 }
 
 func (verifier BranchProtectionVerifier) downloadFile(path string) (string, error) {
@@ -224,18 +215,51 @@ func (verifier BranchProtectionVerifier) downloadFile(path string) (string, erro
 }
 
 func (verifier BranchProtectionVerifier) parseWorkflowDefinition(content string) (*workflowDefinition, error) {
-	parsedYaml := workflowDefinition{}
+	parsedYaml := workflowDefinitionInt{}
 	err := yaml.Unmarshal([]byte(content), &parsedYaml)
 	if err != nil {
 		return nil, err
 	}
-	return &parsedYaml, nil
+	trigger, err := getTriggersOfWorkflowDefinition(&parsedYaml)
+	if err != nil {
+		return nil, err
+	}
+	var jobNames []string
+	for jobName, _ := range parsedYaml.Jobs {
+		jobNames = append(jobNames, jobName)
+	}
+	definition := workflowDefinition{Name: parsedYaml.Name, JobsNames: jobNames, Trigger: trigger}
+	return &definition, nil
 }
 
-type workflowDefinition struct {
+func getTriggersOfWorkflowDefinition(parsedYaml *workflowDefinitionInt) ([]string, error) {
+	if triggerMap, hasTriggerMap := parsedYaml.On.(map[interface{}]interface{}); hasTriggerMap {
+		var result []string
+		for trigger, _ := range triggerMap {
+			result = append(result, trigger.(string))
+		}
+		return result, nil
+	} else if triggerList, hasTriggerList := parsedYaml.On.([]interface{}); hasTriggerList {
+		var result []string
+		for _, trigger := range triggerList {
+			result = append(result, trigger.(string))
+		}
+		return result, nil
+	} else {
+		return nil, fmt.Errorf("the GitHub workflow '%v' has a unimplemented trigger definition style", parsedYaml.Name)
+	}
+}
+
+type workflowDefinitionInt struct {
 	Name string                 `yaml:"name"`
 	On   interface{}            `yaml:"on"`
 	Jobs map[string]interface{} `yaml:"jobs"`
+}
+
+type workflowDefinition struct {
+	Name      string
+	Trigger   []string
+	JobsNames []string
 }
 
 func init() {

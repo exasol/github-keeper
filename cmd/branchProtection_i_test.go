@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/google/go-github/v39/github"
 	"io"
 	"log"
@@ -146,5 +147,62 @@ func (suite *BranchProtectionSuite) cleanup() {
 		} else {
 			suite.NoError(err)
 		}
+	}
+}
+
+func (suite *BranchProtectionSuite) TestGetChecksForWorkflowContentWithListSyntax() {
+	verifier := BranchProtectionVerifier{}
+	definition, err := verifier.parseWorkflowDefinition(`
+name: CI Build
+on:
+  - push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+`)
+	suite.NoError(err)
+	suite.Contains(definition.JobsNames, "build")
+	suite.Contains(definition.Trigger, "push")
+	suite.Contains(definition.Name, "CI Build")
+
+}
+
+func (suite *BranchProtectionSuite) TestGetChecksForWorkflowContentWithMapSyntax() {
+	verifier := BranchProtectionVerifier{}
+	definition, err := verifier.parseWorkflowDefinition(`
+name: CI Build
+on:
+  push:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+`)
+	suite.NoError(err)
+	suite.Contains(definition.JobsNames, "build")
+	suite.Contains(definition.Trigger, "push")
+	suite.Contains(definition.Name, "CI Build")
+
+}
+
+type TestHasWorkflowPushOrPrTriggerCase struct {
+	trigger        []string
+	expectedResult bool
+}
+
+func (suite *BranchProtectionSuite) TestHasWorkflowPushOrPrTrigger() {
+	cases := []TestHasWorkflowPushOrPrTriggerCase{
+		{trigger: []string{""}, expectedResult: false},
+		{trigger: []string{"other"}, expectedResult: false},
+		{trigger: []string{"push"}, expectedResult: true},
+		{trigger: []string{"pull_request"}, expectedResult: true},
+		{trigger: []string{"other", "push"}, expectedResult: true},
+	}
+	verifier := BranchProtectionVerifier{}
+	for _, testCase := range cases {
+		suite.Run(fmt.Sprintf("trigger: %v", testCase.trigger), func() {
+			definition := workflowDefinition{Trigger: testCase.trigger}
+			result := verifier.hasWorkflowPushOrPrTrigger(&definition)
+			suite.Equal(testCase.expectedResult, result)
+		})
 	}
 }
