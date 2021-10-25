@@ -225,7 +225,7 @@ func (verifier BranchProtectionVerifier) parseWorkflowDefinition(content string)
 		return nil, err
 	}
 	var jobNames []string
-	for jobName, _ := range parsedYaml.Jobs {
+	for jobName := range parsedYaml.Jobs {
 		jobNames = append(jobNames, jobName)
 	}
 	definition := workflowDefinition{Name: parsedYaml.Name, JobsNames: jobNames, Trigger: trigger}
