@@ -235,7 +235,7 @@ func (verifier BranchProtectionVerifier) parseWorkflowDefinition(content string)
 func getTriggersOfWorkflowDefinition(parsedYaml *workflowDefinitionInt) ([]string, error) {
 	if triggerMap, hasTriggerMap := parsedYaml.On.(map[interface{}]interface{}); hasTriggerMap {
 		var result []string
-		for trigger, _ := range triggerMap {
+		for trigger := range triggerMap {
 			result = append(result, trigger.(string))
 		}
 		return result, nil
