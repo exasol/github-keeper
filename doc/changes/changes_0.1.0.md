@@ -4,10 +4,10 @@ Code name: Improved GitHub Actions
 
 ## Features:
 
-* # 1: Extracted from product-integration-tool-chest
-* # 6: Modified create-branch-protection to make github-action checks mandatory
-* # 10: Added validation for create-branch-protection
-* # 11: Added sonar cloud as required check to branch protection
+* #1: Extracted from product-integration-tool-chest
+* #6: Modified create-branch-protection to make github-action checks mandatory
+* #10: Added validation for create-branch-protection
+* #11: Added sonar cloud as required check to branch protection
 
 ## Refactoring
 
