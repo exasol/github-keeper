@@ -14,9 +14,13 @@ var branchProtectionCmd = &cobra.Command{
 	Short: "Setup a branch protection for a given repo",
 	Run: func(cmd *cobra.Command, args []string) {
 		client := getGithubClient()
+		fix, err := cmd.Flags().GetBool("fix")
+		if err != nil {
+			panic(fmt.Sprintf("Could not read parameter fix: %v", err.Error()))
+		}
 		for _, repo := range args {
 			verifier := BranchProtectionVerifier{client: client, repoName: repo}
-			verifier.createBranchProtection()
+			verifier.checkIfBranchProtectionIsApplied(fix)
 		}
 	},
 }
@@ -26,15 +30,103 @@ type BranchProtectionVerifier struct {
 	client   *github.Client
 }
 
-func (verifier BranchProtectionVerifier) createBranchProtection() {
-	branch := verifier.getDefaultBranch()
-	protectionRequest := verifier.createProtectionRequest()
-	_, _, err := verifier.client.Repositories.UpdateBranchProtection(context.Background(), "exasol", verifier.repoName, branch, &protectionRequest)
+type BranchProtectionProblemHandler interface {
+	createBranchProtection(repo string, branch string, protection *github.ProtectionRequest)
+	updateProtection(repo string, branch string, protection *github.ProtectionRequest)
+}
+
+type LogBranchProtectionProblemHandler struct {
+}
+
+func (logHandler LogBranchProtectionProblemHandler) createBranchProtection(repo string, branch string, protection *github.ProtectionRequest) {
+	fmt.Printf("exasol/%v does not have a branch protection rule for default branch %v. Use --fix to create it. This error can also happen if you don't have admin privileges on the repo.", repo, branch)
+}
+
+type FixBranchProtectionProblemHandler struct {
+	client *github.Client
+}
+
+func (logHandler LogBranchProtectionProblemHandler) updateProtection(repo string, branch string, protection *github.ProtectionRequest) {
+	fmt.Printf("exasol/%v has a branch protection for default branch %v that is not compliant to our standards. Use --fix to update.\n", repo, branch)
+}
+
+func (handler FixBranchProtectionProblemHandler) createBranchProtection(repo string, branch string, protection *github.ProtectionRequest) {
+	_, _, err := handler.client.Repositories.UpdateBranchProtection(context.Background(), "exasol", repo, branch, protection)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to create branch protection for exasol/%v/%v. Cause: %v", verifier.repoName, branch, err.Error()))
+		panic(fmt.Sprintf("Failed to create branch protection for exasol/%v/%v. Cause: %v", repo, branch, err.Error()))
 	} else {
-		fmt.Printf("Sucessfully updated branch protection for exasol/%v/%v.\n", verifier.repoName, branch)
+		fmt.Printf("Sucessfully created branch protection for exasol/%v/%v.\n", repo, branch)
 	}
+}
+
+func (handler FixBranchProtectionProblemHandler) updateProtection(repo string, branch string, protection *github.ProtectionRequest) {
+	handler.createBranchProtection(repo, branch, protection)
+}
+
+func (verifier BranchProtectionVerifier) checkIfBranchProtectionIsApplied(fix bool) {
+	problemHandler := verifier.getProblemHandler(fix)
+	branch := verifier.getDefaultBranch()
+	existingProtection, resp, _ := verifier.client.Repositories.GetBranchProtection(context.Background(), "exasol", verifier.repoName, branch)
+	protectionRequest := verifier.createProtectionRequest()
+	if resp.StatusCode == 404 {
+		problemHandler.createBranchProtection(verifier.repoName, branch, &protectionRequest)
+	} else {
+		if !(existingProtection.AllowForcePushes.Enabled == *protectionRequest.AllowForcePushes &&
+			checkIfPrReviewPolicyIsApplied(existingProtection.RequiredPullRequestReviews, protectionRequest.RequiredPullRequestReviews) &&
+			verifier.checkIfStatusCheckPolicyIsApplied(existingProtection.RequiredStatusChecks, protectionRequest.RequiredStatusChecks)) {
+			verifier.addExistingChecksToRequest(existingProtection, protectionRequest)
+			problemHandler.updateProtection(verifier.repoName, branch, &protectionRequest)
+		}
+	}
+}
+
+func (verifier BranchProtectionVerifier) addExistingChecksToRequest(existingProtection *github.Protection, protectionRequest github.ProtectionRequest) {
+	if existingProtection == nil || existingProtection.RequiredStatusChecks == nil || existingProtection.RequiredStatusChecks.Contexts == nil {
+		return
+	}
+	for _, existingCheck := range existingProtection.RequiredStatusChecks.Contexts {
+		if !verifier.containsValue(protectionRequest.RequiredStatusChecks.Contexts, existingCheck) {
+			protectionRequest.RequiredStatusChecks.Contexts = append(protectionRequest.RequiredStatusChecks.Contexts, existingCheck)
+		}
+	}
+}
+
+func (verifier BranchProtectionVerifier) checkIfStatusCheckPolicyIsApplied(existing *github.RequiredStatusChecks, request *github.RequiredStatusChecks) bool {
+	if existing == nil || request == nil {
+		return false
+	}
+	for _, requiredCheck := range request.Contexts {
+		if !verifier.containsValue(existing.Contexts, requiredCheck) {
+			return false
+		}
+	}
+	return existing.Strict == request.Strict
+}
+
+func (verifier BranchProtectionVerifier) containsValue(values []string, value string) bool {
+	for _, existingCheck := range values {
+		if existingCheck == value {
+			return true
+		}
+	}
+	return false
+}
+
+func checkIfPrReviewPolicyIsApplied(existing *github.PullRequestReviewsEnforcement, request *github.PullRequestReviewsEnforcementRequest) bool {
+	return existing != nil && request != nil &&
+		existing.RequiredApprovingReviewCount >= request.RequiredApprovingReviewCount &&
+		existing.DismissStaleReviews == request.DismissStaleReviews &&
+		existing.RequireCodeOwnerReviews == request.RequireCodeOwnerReviews
+}
+
+func (verifier BranchProtectionVerifier) getProblemHandler(fix bool) BranchProtectionProblemHandler {
+	var problemHandler BranchProtectionProblemHandler
+	if fix {
+		problemHandler = FixBranchProtectionProblemHandler{verifier.client}
+	} else {
+		problemHandler = LogBranchProtectionProblemHandler{}
+	}
+	return problemHandler
 }
 
 func (verifier BranchProtectionVerifier) getDefaultBranch() string {
@@ -85,23 +177,33 @@ func (verifier BranchProtectionVerifier) getRequiredChecks() (result []string, e
 }
 
 func (verifier BranchProtectionVerifier) getChecksForWorkflow(workflowFilePath *string) ([]string, error) {
-	var result []string
 	content, err := verifier.downloadFile(*workflowFilePath)
 	if err != nil {
 		return nil, err
 	}
-	parsedYaml, err := verifier.parseWorkflowDefinition(content)
+	return verifier.getChecksForWorkflowContent(content)
+}
+
+func (verifier BranchProtectionVerifier) getChecksForWorkflowContent(content string) ([]string, error) {
+	var result []string
+	workflow, err := verifier.parseWorkflowDefinition(content)
 	if err != nil {
 		return nil, err
 	}
-	_, foundPush := parsedYaml.On["push"]
-	_, foundPullRequest := parsedYaml.On["pull_request"]
-	if foundPush || foundPullRequest {
-		for jobName := range parsedYaml.Jobs {
-			result = append(result, jobName)
-		}
+	hasWorkflowPushOrPrTrigger := verifier.hasWorkflowPushOrPrTrigger(workflow)
+	if hasWorkflowPushOrPrTrigger {
+		return workflow.JobsNames, nil
 	}
 	return result, nil
+}
+
+func (verifier BranchProtectionVerifier) hasWorkflowPushOrPrTrigger(parsedYaml *workflowDefinition) bool {
+	for _, trigger := range parsedYaml.Trigger {
+		if trigger == "push" || trigger == "pull_request" {
+			return true
+		}
+	}
+	return false
 }
 
 func (verifier BranchProtectionVerifier) downloadFile(path string) (string, error) {
@@ -113,20 +215,54 @@ func (verifier BranchProtectionVerifier) downloadFile(path string) (string, erro
 }
 
 func (verifier BranchProtectionVerifier) parseWorkflowDefinition(content string) (*workflowDefinition, error) {
-	parsedYaml := workflowDefinition{}
+	parsedYaml := workflowDefinitionInt{}
 	err := yaml.Unmarshal([]byte(content), &parsedYaml)
 	if err != nil {
 		return nil, err
 	}
-	return &parsedYaml, nil
+	trigger, err := getTriggersOfWorkflowDefinition(&parsedYaml)
+	if err != nil {
+		return nil, err
+	}
+	var jobNames []string
+	for jobName := range parsedYaml.Jobs {
+		jobNames = append(jobNames, jobName)
+	}
+	definition := workflowDefinition{Name: parsedYaml.Name, JobsNames: jobNames, Trigger: trigger}
+	return &definition, nil
 }
 
-type workflowDefinition struct {
+func getTriggersOfWorkflowDefinition(parsedYaml *workflowDefinitionInt) ([]string, error) {
+	if triggerMap, hasTriggerMap := parsedYaml.On.(map[interface{}]interface{}); hasTriggerMap {
+		var result []string
+		for trigger := range triggerMap {
+			result = append(result, trigger.(string))
+		}
+		return result, nil
+	} else if triggerList, hasTriggerList := parsedYaml.On.([]interface{}); hasTriggerList {
+		var result []string
+		for _, trigger := range triggerList {
+			result = append(result, trigger.(string))
+		}
+		return result, nil
+	} else {
+		return nil, fmt.Errorf("the GitHub workflow '%v' has a unimplemented trigger definition style", parsedYaml.Name)
+	}
+}
+
+type workflowDefinitionInt struct {
 	Name string                 `yaml:"name"`
-	On   map[string]interface{} `yaml:"on"`
+	On   interface{}            `yaml:"on"`
 	Jobs map[string]interface{} `yaml:"jobs"`
 }
 
+type workflowDefinition struct {
+	Name      string
+	Trigger   []string
+	JobsNames []string
+}
+
 func init() {
+	branchProtectionCmd.Flags().Bool("fix", false, "If this flag is set, github-keeper creates the branch protection. Otherwise it just prints the diff.")
 	rootCmd.AddCommand(branchProtectionCmd)
 }
