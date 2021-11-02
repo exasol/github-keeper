@@ -46,6 +46,7 @@ func (suite *BranchProtectionSuite) assertBranchProtection(protection *github.Pr
 	suite.Assert().Equal(protection.RequiredPullRequestReviews.RequiredApprovingReviewCount, 1)
 	suite.Assert().True(protection.RequiredStatusChecks.Strict)
 	suite.Assert().Contains(protection.RequiredStatusChecks.Contexts, "linkChecker")
+	suite.Assert().Contains(protection.RequiredStatusChecks.Contexts, "SonarCloud Code Analysis")
 }
 
 func (suite *BranchProtectionSuite) TestBranchProtectionMissing() {

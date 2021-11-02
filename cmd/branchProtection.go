@@ -65,9 +65,11 @@ func (handler FixBranchProtectionProblemHandler) updateProtection(repo string, b
 
 func (verifier BranchProtectionVerifier) checkIfBranchProtectionIsApplied(fix bool) {
 	problemHandler := verifier.getProblemHandler(fix)
-	branch := verifier.getDefaultBranch()
+	repo := verifier.getRepo()
+	branch := *repo.DefaultBranch
+	language := *repo.Language
 	existingProtection, resp, _ := verifier.client.Repositories.GetBranchProtection(context.Background(), "exasol", verifier.repoName, branch)
-	protectionRequest := verifier.createProtectionRequest()
+	protectionRequest := verifier.createProtectionRequest(verifier.isSonarRequired(language))
 	if resp.StatusCode == 404 {
 		problemHandler.createBranchProtection(verifier.repoName, branch, &protectionRequest)
 	} else {
@@ -78,6 +80,18 @@ func (verifier BranchProtectionVerifier) checkIfBranchProtectionIsApplied(fix bo
 			problemHandler.updateProtection(verifier.repoName, branch, &protectionRequest)
 		}
 	}
+}
+
+func (verifier BranchProtectionVerifier) isSonarRequired(language string) bool {
+	return language == "Scala" || language == "Java" || language == "Go"
+}
+
+func (verifier BranchProtectionVerifier) getRepo() *github.Repository {
+	repo, _, err := verifier.client.Repositories.Get(context.Background(), "exasol", verifier.repoName)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to get repository exasol/%v. Cause: %v", verifier.repoName, err.Error()))
+	}
+	return repo
 }
 
 func (verifier BranchProtectionVerifier) addExistingChecksToRequest(existingProtection *github.Protection, protectionRequest github.ProtectionRequest) {
@@ -129,18 +143,9 @@ func (verifier BranchProtectionVerifier) getProblemHandler(fix bool) BranchProte
 	return problemHandler
 }
 
-func (verifier BranchProtectionVerifier) getDefaultBranch() string {
-	repo, _, err := verifier.client.Repositories.Get(context.Background(), "exasol", verifier.repoName)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to get repository exasol/%v. Cause: %v", verifier.repoName, err.Error()))
-	}
-	branch := *repo.DefaultBranch
-	return branch
-}
-
-func (verifier BranchProtectionVerifier) createProtectionRequest() github.ProtectionRequest {
+func (verifier BranchProtectionVerifier) createProtectionRequest(requireSonar bool) github.ProtectionRequest {
 	allowForcePushes := false
-	requiredChecks, err := verifier.getRequiredChecks()
+	requiredChecks, err := verifier.getRequiredChecks(requireSonar)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to get required checks for repository %v. Cause: %v", verifier.repoName, err.Error()))
 	}
@@ -160,7 +165,7 @@ func (verifier BranchProtectionVerifier) createProtectionRequest() github.Protec
 	}
 }
 
-func (verifier BranchProtectionVerifier) getRequiredChecks() (result []string, err error) {
+func (verifier BranchProtectionVerifier) getRequiredChecks(requireSonar bool) (result []string, err error) {
 	_, directory, _, err := verifier.client.Repositories.GetContents(context.Background(), "exasol", verifier.repoName, ".github/workflows/", &github.RepositoryContentGetOptions{})
 	if err != nil {
 		return nil, err
@@ -172,6 +177,9 @@ func (verifier BranchProtectionVerifier) getRequiredChecks() (result []string, e
 			return nil, err
 		}
 		result = append(result, requiredChecksForWorkflow...)
+	}
+	if requireSonar {
+		result = append(result, "SonarCloud Code Analysis")
 	}
 	return result, err
 }
