@@ -5,8 +5,8 @@ Code name: Improved GitHub Actions
 ## Features:
 
 * #1: Extracted from product-integration-tool-chest
-* # 6: Modified create-branch-protection to make github-action checks mandatory
-* # 10: Add validation for create-branch-protection
+* #6: Modified create-branch-protection to make github-action checks mandatory
+* #10: Add validation for create-branch-protection
 
 ## Refactoring
 

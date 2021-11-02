@@ -263,6 +263,6 @@ type workflowDefinition struct {
 }
 
 func init() {
-	branchProtectionCmd.Flags().Bool("fix", false, "If this flag is set github-keeper create the branch protection. Otherwise it just prints the diff.")
+	branchProtectionCmd.Flags().Bool("fix", false, "If this flag is set, github-keeper creates the branch protection. Otherwise it just prints the diff.")
 	rootCmd.AddCommand(branchProtectionCmd)
 }
