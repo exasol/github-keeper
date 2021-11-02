@@ -188,7 +188,7 @@ var unifyLabelsCmd = &cobra.Command{
 		githubClient := getGithubClient()
 		fix, err := cmd.Flags().GetBool("fix")
 		if err != nil {
-			panic("Could not read parameter fix")
+			panic(fmt.Sprintf("Could not read parameter fix: %v", err.Error()))
 		}
 		for _, repo := range args {
 			unifyLabels(repo, githubClient, fix)

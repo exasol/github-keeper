@@ -17,6 +17,11 @@ import (
 
 type BranchProtectionSuite struct {
 	suite.Suite
+	githubClient *github.Client
+}
+
+func (suite *BranchProtectionSuite) SetupSuite() {
+	suite.githubClient = getGithubClient()
 }
 
 func TestBranchProtectionSuite(t *testing.T) {
@@ -26,11 +31,10 @@ func TestBranchProtectionSuite(t *testing.T) {
 func (suite *BranchProtectionSuite) TestCreateBranchProtection() {
 	suite.cleanup()
 	defer suite.cleanup()
-	githubClient := getGithubClient()
 	err := branchProtectionCmd.Flags().Set("fix", "true")
 	suite.NoError(err)
 	branchProtectionCmd.Run(branchProtectionCmd, []string{testRepo})
-	protection, _, err := githubClient.Repositories.GetBranchProtection(context.Background(), testOrg, testRepo, "master")
+	protection, _, err := suite.githubClient.Repositories.GetBranchProtection(context.Background(), testOrg, testRepo, "master")
 	suite.NoError(err)
 	suite.assertBranchProtection(protection)
 }
@@ -60,8 +64,7 @@ func (suite *BranchProtectionSuite) TestUpdateIncompleteBranchProtection() {
 	err := branchProtectionCmd.Flags().Set("fix", "true")
 	suite.NoError(err)
 	branchProtectionCmd.Run(branchProtectionCmd, []string{testRepo})
-	githubClient := getGithubClient()
-	protection, _, err := githubClient.Repositories.GetBranchProtection(context.Background(), testOrg, testRepo, "master")
+	protection, _, err := suite.githubClient.Repositories.GetBranchProtection(context.Background(), testOrg, testRepo, "master")
 	suite.NoError(err)
 	suite.assertBranchProtection(protection)
 }
@@ -69,18 +72,17 @@ func (suite *BranchProtectionSuite) TestUpdateIncompleteBranchProtection() {
 func (suite *BranchProtectionSuite) TestBranchProtectionUpdatePreserversExistingChecks() {
 	suite.cleanup()
 	defer suite.cleanup()
-	githubClient := getGithubClient()
 	request := github.ProtectionRequest{
 		RequiredStatusChecks: &github.RequiredStatusChecks{
 			Contexts: []string{"myAdditionalCheck"},
 		},
 	}
-	_, _, err := githubClient.Repositories.UpdateBranchProtection(context.Background(), testOrg, testRepo, testDefaultBranch, &request)
+	_, _, err := suite.githubClient.Repositories.UpdateBranchProtection(context.Background(), testOrg, testRepo, testDefaultBranch, &request)
 	suite.NoError(err)
 	err = branchProtectionCmd.Flags().Set("fix", "true")
 	suite.NoError(err)
 	branchProtectionCmd.Run(branchProtectionCmd, []string{testRepo})
-	protection, _, err := githubClient.Repositories.GetBranchProtection(context.Background(), testOrg, testRepo, "master")
+	protection, _, err := suite.githubClient.Repositories.GetBranchProtection(context.Background(), testOrg, testRepo, "master")
 	suite.NoError(err)
 	suite.Contains(protection.RequiredStatusChecks.Contexts, "myAdditionalCheck")
 }
@@ -96,9 +98,8 @@ func (suite *BranchProtectionSuite) TestBranchProtectionIncomplete() {
 }
 
 func (suite *BranchProtectionSuite) createEmptyBranchProtection() {
-	client := getGithubClient()
 	request := github.ProtectionRequest{}
-	_, _, err := client.Repositories.UpdateBranchProtection(context.Background(), testOrg, testRepo, testDefaultBranch, &request)
+	_, _, err := suite.githubClient.Repositories.UpdateBranchProtection(context.Background(), testOrg, testRepo, testDefaultBranch, &request)
 	suite.NoError(err)
 }
 
@@ -139,8 +140,7 @@ func captureOutput(functionToCapture func()) string {
 }
 
 func (suite *BranchProtectionSuite) cleanup() {
-	client := getGithubClient()
-	_, err := client.Repositories.RemoveBranchProtection(context.Background(), testOrg, testRepo, "master")
+	_, err := suite.githubClient.Repositories.RemoveBranchProtection(context.Background(), testOrg, testRepo, "master")
 	if err != nil {
 		if strings.Contains(err.Error(), "Branch not protected") {
 			//ignore

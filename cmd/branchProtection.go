@@ -16,11 +16,11 @@ var branchProtectionCmd = &cobra.Command{
 		client := getGithubClient()
 		fix, err := cmd.Flags().GetBool("fix")
 		if err != nil {
-			panic("Could not read parameter fix")
+			panic(fmt.Sprintf("Could not read parameter fix: %v", err.Error()))
 		}
 		for _, repo := range args {
 			verifier := BranchProtectionVerifier{client: client, repoName: repo}
-			verifier.verifyBranchProtection(fix)
+			verifier.checkIfBranchProtectionIsApplied(fix)
 		}
 	},
 }
@@ -63,7 +63,7 @@ func (handler FixBranchProtectionProblemHandler) updateProtection(repo string, b
 	handler.createBranchProtection(repo, branch, protection)
 }
 
-func (verifier BranchProtectionVerifier) verifyBranchProtection(fix bool) {
+func (verifier BranchProtectionVerifier) checkIfBranchProtectionIsApplied(fix bool) {
 	problemHandler := verifier.getProblemHandler(fix)
 	branch := verifier.getDefaultBranch()
 	existingProtection, resp, _ := verifier.client.Repositories.GetBranchProtection(context.Background(), "exasol", verifier.repoName, branch)
@@ -72,8 +72,8 @@ func (verifier BranchProtectionVerifier) verifyBranchProtection(fix bool) {
 		problemHandler.createBranchProtection(verifier.repoName, branch, &protectionRequest)
 	} else {
 		if !(existingProtection.AllowForcePushes.Enabled == *protectionRequest.AllowForcePushes &&
-			checkReviewCompliance(existingProtection.RequiredPullRequestReviews, protectionRequest.RequiredPullRequestReviews) &&
-			verifier.checkStatusCheckCompliance(existingProtection.RequiredStatusChecks, protectionRequest.RequiredStatusChecks)) {
+			checkIfPrReviewPolicyIsApplied(existingProtection.RequiredPullRequestReviews, protectionRequest.RequiredPullRequestReviews) &&
+			verifier.checkIfStatusCheckPolicyIsApplied(existingProtection.RequiredStatusChecks, protectionRequest.RequiredStatusChecks)) {
 			verifier.addExistingChecksToRequest(existingProtection, protectionRequest)
 			problemHandler.updateProtection(verifier.repoName, branch, &protectionRequest)
 		}
@@ -85,25 +85,25 @@ func (verifier BranchProtectionVerifier) addExistingChecksToRequest(existingProt
 		return
 	}
 	for _, existingCheck := range existingProtection.RequiredStatusChecks.Contexts {
-		if !verifier.containsValue(existingCheck, protectionRequest.RequiredStatusChecks.Contexts) {
+		if !verifier.containsValue(protectionRequest.RequiredStatusChecks.Contexts, existingCheck) {
 			protectionRequest.RequiredStatusChecks.Contexts = append(protectionRequest.RequiredStatusChecks.Contexts, existingCheck)
 		}
 	}
 }
 
-func (verifier BranchProtectionVerifier) checkStatusCheckCompliance(existing *github.RequiredStatusChecks, request *github.RequiredStatusChecks) bool {
+func (verifier BranchProtectionVerifier) checkIfStatusCheckPolicyIsApplied(existing *github.RequiredStatusChecks, request *github.RequiredStatusChecks) bool {
 	if existing == nil || request == nil {
 		return false
 	}
 	for _, requiredCheck := range request.Contexts {
-		if !verifier.containsValue(requiredCheck, existing.Contexts) {
+		if !verifier.containsValue(existing.Contexts, requiredCheck) {
 			return false
 		}
 	}
 	return existing.Strict == request.Strict
 }
 
-func (verifier BranchProtectionVerifier) containsValue(value string, values []string) bool {
+func (verifier BranchProtectionVerifier) containsValue(values []string, value string) bool {
 	for _, existingCheck := range values {
 		if existingCheck == value {
 			return true
@@ -112,7 +112,7 @@ func (verifier BranchProtectionVerifier) containsValue(value string, values []st
 	return false
 }
 
-func checkReviewCompliance(existing *github.PullRequestReviewsEnforcement, request *github.PullRequestReviewsEnforcementRequest) bool {
+func checkIfPrReviewPolicyIsApplied(existing *github.PullRequestReviewsEnforcement, request *github.PullRequestReviewsEnforcementRequest) bool {
 	return existing != nil && request != nil &&
 		existing.RequiredApprovingReviewCount >= request.RequiredApprovingReviewCount &&
 		existing.DismissStaleReviews == request.DismissStaleReviews &&
