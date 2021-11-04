@@ -19,12 +19,20 @@ func TestUnifyLablesSuite(t *testing.T) {
 func (suite *UnifyLablesSuite) TestCreateLables() {
 	suite.cleanup()       // to be sure we start with a defined state
 	defer suite.cleanup() // to leave a clean repo
+	suite.runUnifyLabelCommand(true)
 	githubClient := getGithubClient()
-	unifyLabels(testRepo, githubClient, true) // should create labels
 	label, _, err := githubClient.Issues.GetLabel(context.Background(), testOrg, testRepo, "feature")
 	suite.NoError(err)
 	suite.Equal(*label.Name, "feature")
 	suite.Equal(*label.Color, "88ee66")
+}
+
+func (suite *UnifyLablesSuite) runUnifyLabelCommand(fix bool) {
+	if fix {
+		err := unifyLabelsCmd.Flags().Set("fix", "true")
+		suite.NoError(err)
+	}
+	unifyLabelsCmd.Run(unifyLabelsCmd, []string{testRepo})
 }
 
 func (suite *UnifyLablesSuite) TestRenameLabel() {
@@ -35,7 +43,7 @@ func (suite *UnifyLablesSuite) TestRenameLabel() {
 	issueName := "TestIssue"
 	issue, _, err := githubClient.Issues.Create(context.Background(), testOrg, testRepo, &github.IssueRequest{Title: &issueName, Labels: &[]string{labelName}})
 	suite.NoError(err)
-	unifyLabels(testRepo, githubClient, true) // should update label to blocked:yes
+	suite.runUnifyLabelCommand(true) // should update label to blocked:yes
 	updatedIssue, _, err := githubClient.Issues.Get(context.Background(), testOrg, testRepo, *issue.Number)
 	suite.NoError(err)
 	var labelNames []string
@@ -56,7 +64,7 @@ func (suite *UnifyLablesSuite) TestMigrateLabel() {
 	issueName := "TestIssue"
 	issue, _, err := githubClient.Issues.Create(context.Background(), testOrg, testRepo, &github.IssueRequest{Title: &issueName, Labels: &[]string{blockedLabel}})
 	suite.NoError(err)
-	unifyLabels(testRepo, githubClient, true) // should update label to blocked:yes
+	suite.runUnifyLabelCommand(true)
 	updatedIssue, _, err := githubClient.Issues.Get(context.Background(), testOrg, testRepo, *issue.Number)
 	suite.NoError(err)
 	var labelNames []string
@@ -75,7 +83,7 @@ func (suite *UnifyLablesSuite) TestChangeColor() {
 	otherColor := "112233"
 	_, _, err := githubClient.Issues.CreateLabel(context.Background(), testOrg, testRepo, &github.Label{Name: &featureLabel, Color: &otherColor})
 	suite.NoError(err)
-	unifyLabels(testRepo, githubClient, true)
+	suite.runUnifyLabelCommand(true)
 	label, _, err := githubClient.Issues.GetLabel(context.Background(), testOrg, testRepo, "feature")
 	suite.NoError(err)
 	suite.Equal(*label.Name, "feature")
@@ -89,7 +97,7 @@ func (suite *UnifyLablesSuite) TestDeleteLabel() {
 	unknownLabel := "unknown123"
 	_, _, err := githubClient.Issues.CreateLabel(context.Background(), testOrg, testRepo, &github.Label{Name: &unknownLabel})
 	suite.NoError(err)
-	unifyLabels(testRepo, githubClient, true) // should create labels
+	suite.runUnifyLabelCommand(true)
 	labels, _, err := githubClient.Issues.ListLabels(context.Background(), testOrg, testRepo, &github.ListOptions{PerPage: 100})
 	suite.NoError(err)
 	labelNames := []string{}
