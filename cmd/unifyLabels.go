@@ -127,11 +127,44 @@ func (realRunModifer *RealLabelModifier) removeLabel(label *github.Label) {
 	}
 }
 
-func (realRunModifer *RealLabelModifier) renameLabel(label *github.Label, labelDefinition *LabelDesc) {
-	err := realRunModifer.updateLabel(label, labelDefinition)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to rename label '%s' for repo '%s'. Cause: '%s'", *label.Name, realRunModifer.repo, err.Error()))
+func (realRunModifer *RealLabelModifier) renameLabel(oldLabel *github.Label, target *LabelDesc) {
+	_, _, err := realRunModifer.githubClient.Issues.GetLabel(context.Background(), "exasol", realRunModifer.repo, target.name)
+	if err == nil { //label exists
+		err := realRunModifer.replaceLabelAtAllIssues(oldLabel, target)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to replace label %v by %v at all issues: %v", oldLabel.GetName(), target.name, err.Error()))
+		}
+	} else { //label does not exist
+		err := realRunModifer.updateLabel(oldLabel, target)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to rename oldLabel '%s' for repo '%s'. Cause: '%s'", *oldLabel.Name, realRunModifer.repo, err.Error()))
+		}
 	}
+}
+
+func (realRunModifer *RealLabelModifier) replaceLabelAtAllIssues(oldLabel *github.Label, target *LabelDesc) error {
+	options := &github.IssueListByRepoOptions{Labels: []string{*oldLabel.Name}}
+	for {
+		issues, response, err := realRunModifer.githubClient.Issues.ListByRepo(context.Background(), "exasol", realRunModifer.repo, options)
+		if err != nil {
+			return err
+		}
+		for _, issue := range issues {
+			_, _, err := realRunModifer.githubClient.Issues.AddLabelsToIssue(context.Background(), "exasol", realRunModifer.repo, issue.GetNumber(), []string{target.name})
+			if err != nil {
+				return err
+			}
+			_, err = realRunModifer.githubClient.Issues.RemoveLabelForIssue(context.Background(), "exasol", realRunModifer.repo, issue.GetNumber(), oldLabel.GetName())
+			if err != nil {
+				return err
+			}
+		}
+		if response.NextPage == 0 {
+			break
+		}
+		options.Page = response.NextPage
+	}
+	return nil
 }
 
 func (realRunModifer *RealLabelModifier) setColor(label *github.Label, labelDefinition *LabelDesc) {
