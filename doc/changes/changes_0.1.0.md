@@ -9,6 +9,10 @@ Code name: Improved GitHub Actions
 * #10: Added validation for create-branch-protection
 * #11: Added sonar cloud as required check to branch protection
 
+## Bug Fixes:
+
+* #16: Fixed unify-labels for deprecated labels where the replacement exists
+
 ## Refactoring
 
 * #4: Added GitHub unify-labels command (rewritten from product-integration-tool-chest)

@@ -38,11 +38,33 @@ func (suite *UnifyLablesSuite) TestRenameLabel() {
 	unifyLabels(testRepo, githubClient, true) // should update label to blocked:yes
 	updatedIssue, _, err := githubClient.Issues.Get(context.Background(), testOrg, testRepo, *issue.Number)
 	suite.NoError(err)
-	labelNames := []string{}
+	var labelNames []string
 	for _, label := range updatedIssue.Labels {
 		labelNames = append(labelNames, *label.Name)
 	}
 	suite.Assert().Contains(labelNames, "blocked:yes")
+}
+
+func (suite *UnifyLablesSuite) TestMigrateLabel() {
+	suite.cleanup()       // to be sure we start with a defined state
+	defer suite.cleanup() // to leave a clean repo
+	githubClient := getGithubClient()
+	blockedLabel := "blocked"
+	blockedYesLabel := "blocked:yes"
+	_, _, err := githubClient.Issues.CreateLabel(context.Background(), testOrg, testRepo, &github.Label{Name: &blockedYesLabel})
+	suite.NoError(err)
+	issueName := "TestIssue"
+	issue, _, err := githubClient.Issues.Create(context.Background(), testOrg, testRepo, &github.IssueRequest{Title: &issueName, Labels: &[]string{blockedLabel}})
+	suite.NoError(err)
+	unifyLabels(testRepo, githubClient, true) // should update label to blocked:yes
+	updatedIssue, _, err := githubClient.Issues.Get(context.Background(), testOrg, testRepo, *issue.Number)
+	suite.NoError(err)
+	var labelNames []string
+	for _, label := range updatedIssue.Labels {
+		labelNames = append(labelNames, *label.Name)
+	}
+	suite.Assert().Contains(labelNames, blockedYesLabel)
+	suite.Assert().NotContains(labelNames, blockedLabel)
 }
 
 func (suite *UnifyLablesSuite) TestChangeColor() {
