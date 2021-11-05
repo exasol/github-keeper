@@ -176,7 +176,11 @@ func (verifier BranchProtectionVerifier) getRequiredChecks(requireSonar bool) (r
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, requiredChecksForWorkflow...)
+		for _, check := range requiredChecksForWorkflow {
+			if !verifier.containsValue(result, check) {
+				result = append(result, check)
+			}
+		}
 	}
 	if requireSonar {
 		result = append(result, "SonarCloud Code Analysis")
