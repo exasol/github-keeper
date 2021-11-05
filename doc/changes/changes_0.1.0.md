@@ -12,6 +12,7 @@ Code name: Improved GitHub Actions
 ## Bug Fixes:
 
 * #16: Fixed unify-labels for deprecated labels where the replacement exists
+* #19: Fixed create-branch-protection for duplicated check names
 
 ## Refactoring
 
