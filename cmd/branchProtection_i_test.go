@@ -42,6 +42,7 @@ func (suite *BranchProtectionSuite) TestCreateBranchProtection() {
 func (suite *BranchProtectionSuite) assertBranchProtection(protection *github.Protection) {
 	suite.Assert().False(protection.AllowForcePushes.Enabled)
 	suite.Assert().True(protection.RequiredPullRequestReviews.DismissStaleReviews)
+	suite.Assert().True(protection.EnforceAdmins.Enabled)
 	suite.Assert().True(protection.RequiredPullRequestReviews.RequireCodeOwnerReviews)
 	suite.Assert().Equal(protection.RequiredPullRequestReviews.RequiredApprovingReviewCount, 1)
 	suite.Assert().True(protection.RequiredStatusChecks.Strict)
@@ -206,4 +207,24 @@ func (suite *BranchProtectionSuite) TestHasWorkflowPushOrPrTrigger() {
 			suite.Equal(testCase.expectedResult, result)
 		})
 	}
+}
+
+func (suite *BranchProtectionSuite) TestCheckIfBranchRestrictionsAreAppliedWithEqualInputs() {
+	verifier := BranchProtectionVerifier{}
+	testUserName := "testUser"
+	testTeamName := "testGroup"
+	testAppName := "testApp"
+	existing := github.BranchRestrictions{Users: []*github.User{{Name: &testUserName}}, Teams: []*github.Team{{Name: &testTeamName}}, Apps: []*github.App{{Name: &testAppName}}}
+	request := github.BranchRestrictionsRequest{Users: []string{testUserName}, Teams: []string{testTeamName}, Apps: []string{testAppName}}
+	suite.Assert().True(verifier.checkIfBranchRestrictionsAreApplied(&existing, &request))
+}
+
+func (suite *BranchProtectionSuite) TestCheckIfBranchRestrictionsAreAppliedWithNonEqualUserName() {
+	verifier := BranchProtectionVerifier{}
+	testUserName := "testUser"
+	testTeamName := "testGroup"
+	testAppName := "testApp"
+	existing := github.BranchRestrictions{Users: []*github.User{{Name: &testUserName}}, Teams: []*github.Team{{Name: &testTeamName}}, Apps: []*github.App{{Name: &testAppName}}}
+	request := github.BranchRestrictionsRequest{Users: []string{"otherUser"}, Teams: []string{testTeamName}, Apps: []string{testAppName}}
+	suite.Assert().False(verifier.checkIfBranchRestrictionsAreApplied(&existing, &request))
 }

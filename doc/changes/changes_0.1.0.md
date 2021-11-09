@@ -8,6 +8,7 @@ Code name: Improved GitHub Actions
 * #6: Modified create-branch-protection to make github-action checks mandatory
 * #10: Added validation for create-branch-protection
 * #11: Added sonar cloud as required check to branch protection
+* #18: Restricted who can merge to protected branches
 
 ## Bug Fixes:
 

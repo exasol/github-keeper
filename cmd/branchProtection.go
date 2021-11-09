@@ -74,8 +74,10 @@ func (verifier BranchProtectionVerifier) checkIfBranchProtectionIsApplied(fix bo
 		problemHandler.createBranchProtection(verifier.repoName, branch, &protectionRequest)
 	} else {
 		if !(existingProtection.AllowForcePushes.Enabled == *protectionRequest.AllowForcePushes &&
-			checkIfPrReviewPolicyIsApplied(existingProtection.RequiredPullRequestReviews, protectionRequest.RequiredPullRequestReviews) &&
-			verifier.checkIfStatusCheckPolicyIsApplied(existingProtection.RequiredStatusChecks, protectionRequest.RequiredStatusChecks)) {
+			existingProtection.EnforceAdmins.Enabled == protectionRequest.EnforceAdmins &&
+			verifier.checkIfPrReviewPolicyIsApplied(existingProtection.RequiredPullRequestReviews, protectionRequest.RequiredPullRequestReviews) &&
+			verifier.checkIfStatusCheckPolicyIsApplied(existingProtection.RequiredStatusChecks, protectionRequest.RequiredStatusChecks) &&
+			verifier.checkIfBranchRestrictionsAreApplied(existingProtection.Restrictions, protectionRequest.Restrictions)) {
 			verifier.addExistingChecksToRequest(existingProtection, protectionRequest)
 			problemHandler.updateProtection(verifier.repoName, branch, &protectionRequest)
 		}
@@ -126,11 +128,54 @@ func (verifier BranchProtectionVerifier) containsValue(values []string, value st
 	return false
 }
 
-func checkIfPrReviewPolicyIsApplied(existing *github.PullRequestReviewsEnforcement, request *github.PullRequestReviewsEnforcementRequest) bool {
+func (verifier BranchProtectionVerifier) checkIfPrReviewPolicyIsApplied(existing *github.PullRequestReviewsEnforcement, request *github.PullRequestReviewsEnforcementRequest) bool {
 	return existing != nil && request != nil &&
 		existing.RequiredApprovingReviewCount >= request.RequiredApprovingReviewCount &&
 		existing.DismissStaleReviews == request.DismissStaleReviews &&
 		existing.RequireCodeOwnerReviews == request.RequireCodeOwnerReviews
+}
+
+func (verifier BranchProtectionVerifier) checkIfBranchRestrictionsAreApplied(existing *github.BranchRestrictions, request *github.BranchRestrictionsRequest) bool {
+	return existing != nil && request != nil &&
+		stringSlicesEqual(getTeamNames(existing.Teams), request.Teams) &&
+		stringSlicesEqual(getUserNames(existing.Users), request.Users) &&
+		stringSlicesEqual(getAppNames(existing.Apps), request.Apps)
+}
+
+func getTeamNames(teams []*github.Team) []string {
+	var result []string
+	for _, team := range teams {
+		result = append(result, *team.Name)
+	}
+	return result
+}
+
+func getUserNames(users []*github.User) []string {
+	var result []string
+	for _, user := range users {
+		result = append(result, *user.Name)
+	}
+	return result
+}
+
+func getAppNames(apps []*github.App) []string {
+	var result []string
+	for _, app := range apps {
+		result = append(result, *app.Name)
+	}
+	return result
+}
+
+func stringSlicesEqual(sliceA, sliceB []string) bool {
+	if len(sliceA) != len(sliceB) {
+		return false
+	}
+	for index := range sliceA {
+		if sliceA[index] != sliceB[index] {
+			return false
+		}
+	}
+	return true
 }
 
 func (verifier BranchProtectionVerifier) getProblemHandler(fix bool) BranchProtectionProblemHandler {
@@ -159,8 +204,12 @@ func (verifier BranchProtectionVerifier) createProtectionRequest(requireSonar bo
 			RequireCodeOwnerReviews:      true,
 			RequiredApprovingReviewCount: 1,
 		},
-		EnforceAdmins:    false,
-		Restrictions:     nil,
+		EnforceAdmins: true,
+		Restrictions: &github.BranchRestrictionsRequest{
+			Teams: []string{},
+			Users: []string{},
+			Apps:  []string{},
+		},
 		AllowForcePushes: &allowForcePushes,
 	}
 }
