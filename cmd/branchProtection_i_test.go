@@ -42,7 +42,7 @@ func (suite *BranchProtectionSuite) assertBranchProtection(protection *github.Pr
 func (suite *BranchProtectionSuite) TestBranchProtectionMissing() {
 	suite.cleanup()
 	defer suite.cleanup()
-	output := suite.captureOutput(func() {
+	output := suite.CaptureOutput(func() {
 		verifier := BranchProtectionVerifier{repoName: suite.testRepo, client: getGithubClient()}
 		verifier.CheckIfBranchProtectionIsApplied(false)
 	})
@@ -81,7 +81,7 @@ func (suite *BranchProtectionSuite) TestBranchProtectionIncomplete() {
 	suite.cleanup()
 	defer suite.cleanup()
 	suite.createEmptyBranchProtection()
-	output := suite.captureOutput(func() {
+	output := suite.CaptureOutput(func() {
 		verifier := BranchProtectionVerifier{repoName: suite.testRepo, client: getGithubClient()}
 		verifier.CheckIfBranchProtectionIsApplied(false)
 	})

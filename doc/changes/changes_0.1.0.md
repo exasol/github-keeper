@@ -9,6 +9,8 @@ Code name: Improved GitHub Actions
 * #10: Added validation for create-branch-protection
 * #11: Added sonar cloud as required check to branch protection
 * #18: Restricted who can merge to protected branches
+* #23: Enabled delete merged branches
+* #22: Enable auto-merge
 
 ## Refactoring
 
