@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/google/go-github/v39/github"
-	"github.com/spf13/cobra"
 )
 
 func getLabelModifier(fix bool, repo string, githubClient *github.Client) LablesModifier {
@@ -16,8 +15,7 @@ func getLabelModifier(fix bool, repo string, githubClient *github.Client) Lables
 	}
 }
 
-func unifyLabels(repo string, githubClient *github.Client, fix bool) {
-	println("\n" + repo)
+func UnifyLabels(repo string, githubClient *github.Client, fix bool) {
 	labelDefinitions := []*LabelDesc{
 		{"feature", "88ee66", []string{"enhancement"}, true},
 		{"bug", "ee0000", []string{}, true},
@@ -39,11 +37,11 @@ func unifyLabels(repo string, githubClient *github.Client, fix bool) {
 		{"security", "ee0000", []string{}, false}, //check if we can configure
 		{"blocked:yes", "000000", []string{"blocked", "status:blocked"}, true}}
 	labelModifier := getLabelModifier(fix, repo, githubClient)
-	checkForMissingLabels(repo, githubClient, labelDefinitions, labelModifier)
+	unifyLabels(repo, githubClient, labelDefinitions, labelModifier)
 	checkExistingLabels(repo, githubClient, labelDefinitions, labelModifier)
 }
 
-func checkForMissingLabels(repo string, githubClient *github.Client, labelDefinitions []*LabelDesc, labelModifier LablesModifier) {
+func unifyLabels(repo string, githubClient *github.Client, labelDefinitions []*LabelDesc, labelModifier LablesModifier) {
 	labels := listLabels(repo, githubClient)
 	for _, label := range labels {
 		labelDesc := findLabelDefinitionByName(*label.Name, labelDefinitions)
@@ -209,29 +207,6 @@ func findLabelDefinitionByOldName(name string, labelDefinitions []*LabelDesc) *L
 		}
 	}
 	return nil
-}
-
-// unifyLabelsCmd represents the unifyLabels command
-var unifyLabelsCmd = &cobra.Command{
-	Use:   "unify-labels <repo name>",
-	Short: "Unifies the GitHub labels for a given repo",
-	Args:  cobra.MinimumNArgs(1),
-	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		githubClient := getGithubClient()
-		fix, err := cmd.Flags().GetBool("fix")
-		if err != nil {
-			panic(fmt.Sprintf("Could not read parameter fix: %v", err.Error()))
-		}
-		for _, repo := range args {
-			unifyLabels(repo, githubClient, fix)
-		}
-	},
-}
-
-func init() {
-	unifyLabelsCmd.Flags().Bool("fix", false, "If this flag is set github-keeper unifies the labels. Otherwise it just prints the diff.")
-	rootCmd.AddCommand(unifyLabelsCmd)
 }
 
 type LabelDesc struct {

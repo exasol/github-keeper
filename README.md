@@ -29,10 +29,10 @@ in the github-keeper directory run:
 go run .
 ```
 
-Hint: For setting up a branch protection for all your repos use:
+Hint: To verify the setup of all your repos use:
 
 ```shell
-go run . create-branch-protection $(go run . list-my-repos)
+go run . configure-repo $(go run . list-my-repos)
 ```
 
 ### Tips

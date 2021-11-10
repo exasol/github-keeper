@@ -31,9 +31,8 @@ func TestBranchProtectionSuite(t *testing.T) {
 func (suite *BranchProtectionSuite) TestCreateBranchProtection() {
 	suite.cleanup()
 	defer suite.cleanup()
-	err := branchProtectionCmd.Flags().Set("fix", "true")
-	suite.NoError(err)
-	branchProtectionCmd.Run(branchProtectionCmd, []string{testRepo})
+	verifier := BranchProtectionVerifier{repoName: testRepo, client: getGithubClient()}
+	verifier.CheckIfBranchProtectionIsApplied(true)
 	protection, _, err := suite.githubClient.Repositories.GetBranchProtection(context.Background(), testOrg, testRepo, "master")
 	suite.NoError(err)
 	suite.assertBranchProtection(protection)
@@ -54,7 +53,8 @@ func (suite *BranchProtectionSuite) TestBranchProtectionMissing() {
 	suite.cleanup()
 	defer suite.cleanup()
 	output := captureOutput(func() {
-		branchProtectionCmd.Run(branchProtectionCmd, []string{testRepo})
+		verifier := BranchProtectionVerifier{repoName: testRepo, client: getGithubClient()}
+		verifier.CheckIfBranchProtectionIsApplied(false)
 	})
 	suite.Assert().Equal("exasol/testing-release-robot does not have a branch protection rule for default branch master. Use --fix to create it. This error can also happen if you don't have admin privileges on the repo.", output)
 }
@@ -63,9 +63,8 @@ func (suite *BranchProtectionSuite) TestUpdateIncompleteBranchProtection() {
 	suite.cleanup()
 	defer suite.cleanup()
 	suite.createEmptyBranchProtection()
-	err := branchProtectionCmd.Flags().Set("fix", "true")
-	suite.NoError(err)
-	branchProtectionCmd.Run(branchProtectionCmd, []string{testRepo})
+	verifier := BranchProtectionVerifier{repoName: testRepo, client: getGithubClient()}
+	verifier.CheckIfBranchProtectionIsApplied(true)
 	protection, _, err := suite.githubClient.Repositories.GetBranchProtection(context.Background(), testOrg, testRepo, "master")
 	suite.NoError(err)
 	suite.assertBranchProtection(protection)
@@ -81,9 +80,8 @@ func (suite *BranchProtectionSuite) TestBranchProtectionUpdatePreserversExisting
 	}
 	_, _, err := suite.githubClient.Repositories.UpdateBranchProtection(context.Background(), testOrg, testRepo, testDefaultBranch, &request)
 	suite.NoError(err)
-	err = branchProtectionCmd.Flags().Set("fix", "true")
-	suite.NoError(err)
-	branchProtectionCmd.Run(branchProtectionCmd, []string{testRepo})
+	verifier := BranchProtectionVerifier{repoName: testRepo, client: getGithubClient()}
+	verifier.CheckIfBranchProtectionIsApplied(true)
 	protection, _, err := suite.githubClient.Repositories.GetBranchProtection(context.Background(), testOrg, testRepo, "master")
 	suite.NoError(err)
 	suite.Contains(protection.RequiredStatusChecks.Contexts, "myAdditionalCheck")
@@ -94,7 +92,8 @@ func (suite *BranchProtectionSuite) TestBranchProtectionIncomplete() {
 	defer suite.cleanup()
 	suite.createEmptyBranchProtection()
 	output := captureOutput(func() {
-		branchProtectionCmd.Run(branchProtectionCmd, []string{testRepo})
+		verifier := BranchProtectionVerifier{repoName: testRepo, client: getGithubClient()}
+		verifier.CheckIfBranchProtectionIsApplied(false)
 	})
 	suite.Assert().Equal("exasol/testing-release-robot has a branch protection for default branch master that is not compliant to our standards. Use --fix to update.\n", output)
 }

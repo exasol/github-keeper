@@ -4,26 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/go-github/v39/github"
-	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
-
-var branchProtectionCmd = &cobra.Command{
-	Use:   "create-branch-protection <repo-name>",
-	Args:  cobra.MinimumNArgs(1),
-	Short: "Setup a branch protection for a given repo",
-	Run: func(cmd *cobra.Command, args []string) {
-		client := getGithubClient()
-		fix, err := cmd.Flags().GetBool("fix")
-		if err != nil {
-			panic(fmt.Sprintf("Could not read parameter fix: %v", err.Error()))
-		}
-		for _, repo := range args {
-			verifier := BranchProtectionVerifier{client: client, repoName: repo}
-			verifier.checkIfBranchProtectionIsApplied(fix)
-		}
-	},
-}
 
 type BranchProtectionVerifier struct {
 	repoName string
@@ -63,7 +45,7 @@ func (handler FixBranchProtectionProblemHandler) updateProtection(repo string, b
 	handler.createBranchProtection(repo, branch, protection)
 }
 
-func (verifier BranchProtectionVerifier) checkIfBranchProtectionIsApplied(fix bool) {
+func (verifier BranchProtectionVerifier) CheckIfBranchProtectionIsApplied(fix bool) {
 	problemHandler := verifier.getProblemHandler(fix)
 	repo := verifier.getRepo()
 	branch := *repo.DefaultBranch
@@ -321,9 +303,4 @@ type workflowDefinition struct {
 	Name      string
 	Trigger   []string
 	JobsNames []string
-}
-
-func init() {
-	branchProtectionCmd.Flags().Bool("fix", false, "If this flag is set, github-keeper creates the branch protection. Otherwise it just prints the diff.")
-	rootCmd.AddCommand(branchProtectionCmd)
 }

@@ -28,11 +28,7 @@ func (suite *UnifyLablesSuite) TestCreateLables() {
 }
 
 func (suite *UnifyLablesSuite) runUnifyLabelCommand(fix bool) {
-	if fix {
-		err := unifyLabelsCmd.Flags().Set("fix", "true")
-		suite.NoError(err)
-	}
-	unifyLabelsCmd.Run(unifyLabelsCmd, []string{testRepo})
+	UnifyLabels(testRepo, getGithubClient(), fix)
 }
 
 func (suite *UnifyLablesSuite) TestRenameLabel() {
