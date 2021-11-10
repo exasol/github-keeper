@@ -10,6 +10,10 @@ Code name: Improved GitHub Actions
 * #11: Added sonar cloud as required check to branch protection
 * #18: Restricted who can merge to protected branches
 
+## Refactoring
+
+* #25: Unified commands to `configure-repo`
+
 ## Bug Fixes:
 
 * #16: Fixed unify-labels for deprecated labels where the replacement exists
