@@ -25,7 +25,7 @@ func (suite *IntegrationTestSuite) SetupSuite() {
 	suite.githubClient = getGithubClient()
 }
 
-func (suite *IntegrationTestSuite) captureOutput(functionToCapture func()) string {
+func (suite *IntegrationTestSuite) CaptureOutput(functionToCapture func()) string {
 	reader, writer, err := os.Pipe()
 	if err != nil {
 		panic(err)

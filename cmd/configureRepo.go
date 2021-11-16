@@ -17,9 +17,11 @@ var configureRepoCmd = &cobra.Command{
 		}
 		for _, repo := range args {
 			fmt.Printf("\n%v \n", repo)
-			verifier := BranchProtectionVerifier{client: client, repoName: repo}
-			verifier.CheckIfBranchProtectionIsApplied(fix)
+			branchProtectionVerifier := BranchProtectionVerifier{client: client, repoName: repo}
+			branchProtectionVerifier.CheckIfBranchProtectionIsApplied(fix)
 			UnifyLabels(repo, client, fix)
+			settingsVerifier := RepoSettingsVerifier{repo: repo, githubClient: client, org: "exasol"}
+			settingsVerifier.VerifyRepoSettings(fix)
 		}
 	},
 }

@@ -18,7 +18,7 @@ func (suite *ConfigureRepoSuite) SetupSuite() {
 }
 
 func (suite *ConfigureRepoSuite) TestRunCommand() {
-	output := suite.captureOutput(func() {
+	output := suite.CaptureOutput(func() {
 		configureRepoCmd.Run(configureRepoCmd, []string{suite.testRepo})
 	})
 	suite.Assert().Contains(output, suite.testRepo)
