@@ -19,6 +19,8 @@ func (suite *ConfigureRepoSuite) SetupSuite() {
 
 func (suite *ConfigureRepoSuite) TestRunCommand() {
 	output := suite.CaptureOutput(func() {
+		err := configureRepoCmd.Flags().Set("secrets", "../test_resources/secrets.yml")
+		suite.NoError(err)
 		configureRepoCmd.Run(configureRepoCmd, []string{suite.testRepo})
 	})
 	suite.Assert().Contains(output, suite.testRepo)

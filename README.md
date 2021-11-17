@@ -11,15 +11,26 @@ Features:
 ## Installation
 
 1. Install Go language. Minimum version is 1.13.
-    * On Debian / Ubuntu:
-        ```sh
-        sudo apt install golang-go
-        ```
-2. Install dependendent packages: 
+   * On Debian / Ubuntu:
+       ```sh
+       sudo apt install golang-go
+       ```
+2. Install dependendent packages:
     ```
     cd $HOME/<PATH TO THIS REPO>/
     go get ./...
     ```
+
+## Configuration
+
+Please create the config file `~/.github-keeper/secrets.yml` with the following content:
+
+``` yaml
+issuesSlackWebhookUrl: "<SLACK WEB-HOOK URL FOR ISSUE UPDATES>"
+```
+
+Hint: Instead of collecting all variables by hand you can also copy the file-content from the integration-teams keeper
+vault.
 
 ## Usage
 

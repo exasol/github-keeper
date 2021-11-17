@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"os"
+	"path"
 )
 
 var configureRepoCmd = &cobra.Command{
@@ -15,6 +17,11 @@ var configureRepoCmd = &cobra.Command{
 		if err != nil {
 			panic(fmt.Sprintf("Could not read parameter fix: %v", err.Error()))
 		}
+		secretsFile, err := cmd.Flags().GetString("secrets")
+		if err != nil {
+			panic(fmt.Sprintf("Could not read parameter secrets: %v", err.Error()))
+		}
+		secrets := ReadSecretsFromYaml(secretsFile)
 		for _, repo := range args {
 			fmt.Printf("\n%v \n", repo)
 			branchProtectionVerifier := BranchProtectionVerifier{client: client, repoName: repo}
@@ -22,11 +29,22 @@ var configureRepoCmd = &cobra.Command{
 			UnifyLabels(repo, client, fix)
 			settingsVerifier := RepoSettingsVerifier{repo: repo, githubClient: client, org: "exasol"}
 			settingsVerifier.VerifyRepoSettings(fix)
+			webHookVerifier := WebHookVerifier{secrets: secrets, repo: repo, githubClient: client, org: "exasol"}
+			webHookVerifier.VerifyWebHooks(fix)
 		}
 	},
 }
 
+func getDefaultConfigFile() string {
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to get user's home directory. Cause: %v", err.Error()))
+	}
+	return path.Join(homedir, ".github-keeper", "secrets.yml")
+}
+
 func init() {
 	configureRepoCmd.Flags().Bool("fix", false, "If this flag is set, github-keeper fixed the findings. Otherwise it just prints the diff.")
+	configureRepoCmd.Flags().String("secrets", getDefaultConfigFile(), "Use a different secrets file location")
 	rootCmd.AddCommand(configureRepoCmd)
 }
