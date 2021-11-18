@@ -2,7 +2,7 @@
 
 Code name: Improved GitHub Actions
 
-## Features:
+## Features
 
 * #1: Extracted from product-integration-tool-chest
 * #6: Modified create-branch-protection to make github-action checks mandatory
@@ -11,6 +11,7 @@ Code name: Improved GitHub Actions
 * #18: Restricted who can merge to protected branches
 * #23: Enabled delete merged branches
 * #22: Enable auto-merge
+* #15: Added validation for slack web-hook
 
 ## Refactoring
 

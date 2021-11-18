@@ -119,9 +119,9 @@ func (verifier BranchProtectionVerifier) checkIfPrReviewPolicyIsApplied(existing
 
 func (verifier BranchProtectionVerifier) checkIfBranchRestrictionsAreApplied(existing *github.BranchRestrictions, request *github.BranchRestrictionsRequest) bool {
 	return existing != nil && request != nil &&
-		stringSlicesEqual(getTeamNames(existing.Teams), request.Teams) &&
-		stringSlicesEqual(getUserNames(existing.Users), request.Users) &&
-		stringSlicesEqual(getAppNames(existing.Apps), request.Apps)
+		stringSlicesEqualIgnoringOrder(getTeamNames(existing.Teams), request.Teams) &&
+		stringSlicesEqualIgnoringOrder(getUserNames(existing.Users), request.Users) &&
+		stringSlicesEqualIgnoringOrder(getAppNames(existing.Apps), request.Apps)
 }
 
 func getTeamNames(teams []*github.Team) []string {
@@ -146,18 +146,6 @@ func getAppNames(apps []*github.App) []string {
 		result = append(result, *app.Name)
 	}
 	return result
-}
-
-func stringSlicesEqual(sliceA, sliceB []string) bool {
-	if len(sliceA) != len(sliceB) {
-		return false
-	}
-	for index := range sliceA {
-		if sliceA[index] != sliceB[index] {
-			return false
-		}
-	}
-	return true
 }
 
 func (verifier BranchProtectionVerifier) getProblemHandler(fix bool) BranchProtectionProblemHandler {
