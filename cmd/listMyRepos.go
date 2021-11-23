@@ -10,7 +10,7 @@ import (
 
 var listMyReposCmd = &cobra.Command{
 	Use:   "list-my-repos",
-	Short: "List all repositories of the Exasol organization where I'am the admin.",
+	Short: "List all repositories of the Exasol organization where I'm the admin and that are not archived.",
 	Run: func(cmd *cobra.Command, args []string) {
 		client := getGithubClient()
 		opt := &github.RepositoryListByOrgOptions{
@@ -22,7 +22,7 @@ var listMyReposCmd = &cobra.Command{
 				panic("Failed to list repositories. Cause: " + err.Error())
 			}
 			for _, repo := range repos {
-				if (repo.Permissions)["admin"] {
+				if (repo.Permissions)["admin"] && !*repo.Archived {
 					fmt.Print(" " + *repo.Name)
 				}
 			}
