@@ -21,6 +21,10 @@ func (suite SliceComparatorSuite) TestEqualWithDifferentOrder() {
 	suite.Assert().True(stringSlicesEqualIgnoringOrder([]string{"a", "b"}, []string{"b", "a"}))
 }
 
+func (suite SliceComparatorSuite) TestEqualWithDifferentLength() {
+	suite.Assert().False(stringSlicesEqualIgnoringOrder([]string{"a", "b"}, []string{"a", "b", "c"}))
+}
+
 func (suite SliceComparatorSuite) TestDifferent() {
 	suite.Assert().False(stringSlicesEqualIgnoringOrder([]string{"a", "b"}, []string{"a", "c"}))
 }
