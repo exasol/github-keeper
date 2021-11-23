@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/go-github/v39/github"
 	"gopkg.in/yaml.v2"
+	"strings"
 )
 
 type BranchProtectionVerifier struct {
@@ -183,10 +184,16 @@ func (verifier BranchProtectionVerifier) createProtectionRequest(requireSonar bo
 	}
 }
 
-func (verifier BranchProtectionVerifier) getRequiredChecks(requireSonar bool) (result []string, err error) {
+func (verifier BranchProtectionVerifier) getRequiredChecks(requireSonar bool) ([]string, error) {
+	result := []string{}
 	_, directory, _, err := verifier.client.Repositories.GetContents(context.Background(), "exasol", verifier.repoName, ".github/workflows/", &github.RepositoryContentGetOptions{})
 	if err != nil {
-		return nil, err
+		errorMessage := err.Error()
+		if strings.Contains(errorMessage, "404 Not Found") {
+			directory = []*github.RepositoryContent{}
+		} else {
+			return nil, err
+		}
 	}
 	for _, fileDesc := range directory {
 		workflowFilePath := fileDesc.Path
@@ -203,7 +210,7 @@ func (verifier BranchProtectionVerifier) getRequiredChecks(requireSonar bool) (r
 	if requireSonar {
 		result = append(result, "SonarCloud Code Analysis")
 	}
-	return result, err
+	return result, nil
 }
 
 func (verifier BranchProtectionVerifier) getChecksForWorkflow(workflowFilePath *string) ([]string, error) {
