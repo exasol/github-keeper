@@ -49,9 +49,8 @@ func (verifier BranchProtectionVerifier) CheckIfBranchProtectionIsApplied(fix bo
 	problemHandler := verifier.getProblemHandler(fix)
 	repo := verifier.getRepo()
 	branch := *repo.DefaultBranch
-	language := *repo.Language
 	existingProtection, resp, _ := verifier.client.Repositories.GetBranchProtection(context.Background(), "exasol", verifier.repoName, branch)
-	protectionRequest := verifier.createProtectionRequest(verifier.isSonarRequired(language))
+	protectionRequest := verifier.createProtectionRequest(verifier.isSonarRequired(repo.Language))
 	if resp.StatusCode == 404 {
 		problemHandler.createBranchProtection(verifier.repoName, branch, &protectionRequest)
 	} else {
@@ -66,8 +65,8 @@ func (verifier BranchProtectionVerifier) CheckIfBranchProtectionIsApplied(fix bo
 	}
 }
 
-func (verifier BranchProtectionVerifier) isSonarRequired(language string) bool {
-	return language == "Scala" || language == "Java" || language == "Go"
+func (verifier BranchProtectionVerifier) isSonarRequired(language *string) bool {
+	return language != nil && (*language == "Scala" || *language == "Java" || *language == "Go")
 }
 
 func (verifier BranchProtectionVerifier) getRepo() *github.Repository {

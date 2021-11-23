@@ -21,6 +21,7 @@ Code name: Improved GitHub Actions
 
 * #16: Fixed unify-labels for deprecated labels where the replacement exists
 * #19: Fixed create-branch-protection for duplicated check names
+* #29: Fixed configure-repo for repositories with no detected language
 
 ## Refactoring
 
