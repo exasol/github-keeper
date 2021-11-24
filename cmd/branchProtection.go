@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"github.com/google/go-github/v39/github"
 	"gopkg.in/yaml.v2"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 type BranchProtectionVerifier struct {
@@ -255,11 +258,115 @@ func (verifier BranchProtectionVerifier) parseWorkflowDefinition(content string)
 		return nil, err
 	}
 	var jobNames []string
-	for jobName := range parsedYaml.Jobs {
-		jobNames = append(jobNames, jobName)
+	for jobKey, jobDescription := range parsedYaml.Jobs {
+		jobName := verifier.getJobName(jobKey, &jobDescription)
+		if jobDescription.Strategy != nil && len(jobDescription.Strategy.Matrix) != 0 {
+			matrix := jobDescription.Strategy.Matrix
+			keys := make([]string, 0, len(matrix))
+			for key := range matrix {
+				keys = append(keys, key)
+			}
+			if strings.Contains(jobName, "${{") {
+				verifier.replaceParametersInJobName(jobName, matrix, keys, 0, &jobNames)
+			} else {
+				verifier.addParametersToJobName(jobName, matrix, keys, 0, &jobNames)
+			}
+		} else {
+			jobNames = append(jobNames, jobName)
+		}
 	}
 	definition := workflowDefinition{Name: parsedYaml.Name, JobsNames: jobNames, Trigger: trigger}
 	return &definition, nil
+}
+
+func (verifier BranchProtectionVerifier) addParametersToJobName(jobName string, matrix map[string][]interface{}, keys []string, parameterCursor int, result *[]string) {
+	extendedJobName := jobName
+	if parameterCursor >= len(keys) {
+		*result = append(*result, jobName+")")
+	} else {
+		if parameterCursor == 0 {
+			extendedJobName += " ("
+		} else {
+			extendedJobName += ", "
+		}
+		key := keys[parameterCursor]
+		for _, value := range matrix[key] {
+			doubleExtendedJobName := extendedJobName + verifier.getParameterAsCommaSeparatedList(value)
+			verifier.addParametersToJobName(doubleExtendedJobName, matrix, keys, parameterCursor+1, result)
+		}
+	}
+}
+
+func (verifier BranchProtectionVerifier) getParameterAsCommaSeparatedList(value interface{}) string {
+	switch value := value.(type) {
+	case string:
+		return value
+	case map[interface{}]interface{}:
+		var parameters []string
+		for _, objectValue := range value {
+			objectValueString := verifier.convertValueToString(objectValue)
+			parameters = append(parameters, objectValueString)
+		}
+		return strings.Join(parameters, ", ")
+	default:
+		panic("unsupported type")
+	}
+}
+
+func (verifier BranchProtectionVerifier) replaceParametersInJobName(jobName string, matrix map[string][]interface{}, keys []string, parameterCursor int, result *[]string) {
+	if parameterCursor >= len(keys) {
+		*result = append(*result, jobName)
+	} else {
+		key := keys[parameterCursor]
+		pattern, err := regexp.Compile("\\${\\{\\s*matrix.\\Q" + key + "\\E\\s*\\}\\}")
+		if err != nil {
+			panic(err)
+		}
+		for _, value := range matrix[key] {
+			filledJobName := verifier.replaceSpecificParameterInJobName(jobName, value, pattern)
+			verifier.replaceParametersInJobName(filledJobName, matrix, keys, parameterCursor+1, result)
+		}
+	}
+}
+
+func (verifier BranchProtectionVerifier) replaceSpecificParameterInJobName(jobName string, value interface{}, pattern *regexp.Regexp) string {
+	switch value := value.(type) {
+	case string:
+		return pattern.ReplaceAllString(jobName, value)
+	case map[interface{}]interface{}:
+		filledJobName := jobName
+		for objectKey, objectValue := range value {
+			objectKeyString := objectKey.(string)
+			objectValueString := verifier.convertValueToString(objectValue)
+			objectPattern, err := regexp.Compile("\\${\\{\\s*matrix.\\Q" + objectKeyString + "\\E\\s*\\}\\}")
+			if err != nil {
+				panic(err)
+			}
+			filledJobName = objectPattern.ReplaceAllString(filledJobName, objectValueString)
+		}
+		return filledJobName
+	default:
+		panic("unsupported type")
+	}
+}
+
+func (verifier BranchProtectionVerifier) convertValueToString(value interface{}) string {
+	switch value := value.(type) {
+	case int:
+		return strconv.Itoa(value)
+	case string:
+		return value
+	default:
+		panic("unsupported value type")
+	}
+}
+
+func (verifier BranchProtectionVerifier) getJobName(jobKey string, jobDescription *JobDescriptionInt) string {
+	if jobDescription.Name != nil {
+		return *jobDescription.Name
+	} else {
+		return jobKey
+	}
 }
 
 func getTriggersOfWorkflowDefinition(parsedYaml *workflowDefinitionInt) ([]string, error) {
@@ -280,10 +387,19 @@ func getTriggersOfWorkflowDefinition(parsedYaml *workflowDefinitionInt) ([]strin
 	}
 }
 
+type strategyDescriptionInt struct {
+	Matrix map[string][]interface{} `yaml:"matrix"`
+}
+
+type JobDescriptionInt struct {
+	Strategy *strategyDescriptionInt `yaml:"strategy"`
+	Name     *string                 `yaml:"name"`
+}
+
 type workflowDefinitionInt struct {
-	Name string                 `yaml:"name"`
-	On   interface{}            `yaml:"on"`
-	Jobs map[string]interface{} `yaml:"jobs"`
+	Name string                       `yaml:"name"`
+	On   interface{}                  `yaml:"on"`
+	Jobs map[string]JobDescriptionInt `yaml:"jobs"`
 }
 
 type workflowDefinition struct {
