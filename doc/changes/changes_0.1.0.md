@@ -23,6 +23,7 @@ Code name: Improved GitHub Actions
 * #19: Fixed create-branch-protection for duplicated check names
 * #29: Fixed configure-repo for repositories with no detected language
 * #33: Fixed branch protection rule creation for projects with matrix builds
+* #31: Fixed configure-repo for repositories with no workflows
 
 ## Refactoring
 
