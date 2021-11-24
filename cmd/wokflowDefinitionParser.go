@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"gopkg.in/yaml.v2"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -25,23 +26,11 @@ func (parser WorkflowDefinitionParser) ParseWorkflowDefinition(content string) (
 	for jobKey, jobDescription := range parsedYaml.Jobs {
 		jobName := parser.getJobName(jobKey, &jobDescription)
 		if jobDescription.Strategy != nil && len(jobDescription.Strategy.Matrix) != 0 {
-			matrix := jobDescription.Strategy.Matrix
-			keys := make([]string, 0, len(matrix))
-			for key := range matrix {
-				keys = append(keys, key)
+			jobNamesForThisJob, err := parser.fillJobNameParametersForMatrixBuild(jobDescription, jobName)
+			if err != nil {
+				return nil, err
 			}
-			if strings.Contains(jobName, "${{") {
-				parser.replaceParametersInJobName(jobName, matrix, keys, 0, &jobNames)
-			} else {
-				if len(keys) == 1 {
-					err = parser.addParametersToJobName(jobName, matrix[keys[0]], &jobNames)
-					if err != nil {
-						return nil, err
-					}
-				} else {
-					return nil, fmt.Errorf("multi dimensional matrix github-action jobs with no explicit name are not supported. Please add a name field to the job that combines the matrix parameters into a more readable name. For example \"Build with Go ${{matrix.go}} and Exasol ${{ matrix.db }}\"")
-				}
-			}
+			jobNames = append(jobNames, jobNamesForThisJob...)
 		} else {
 			jobNames = append(jobNames, jobName)
 		}
@@ -50,21 +39,43 @@ func (parser WorkflowDefinitionParser) ParseWorkflowDefinition(content string) (
 	return &definition, nil
 }
 
-func (parser WorkflowDefinitionParser) addParametersToJobName(jobName string, parameterValues []interface{}, result *[]string) error {
+func (parser WorkflowDefinitionParser) fillJobNameParametersForMatrixBuild(jobDescription JobDescriptionInt, jobName string) (jobNames []string, err error) {
+	matrix := jobDescription.Strategy.Matrix
+	keys := make([]string, 0, len(matrix))
+	for key := range matrix {
+		keys = append(keys, key)
+	}
+	if strings.Contains(jobName, "${{") {
+		jobNames = append(jobNames, parser.replaceParametersInJobName(jobName, matrix, keys, 0)...)
+	} else {
+		if len(keys) == 1 {
+			filledNames, err := parser.addParametersToJobName(jobName, matrix[keys[0]])
+			if err != nil {
+				return nil, err
+			}
+			jobNames = append(jobNames, filledNames...)
+		} else {
+			return nil, fmt.Errorf("multi dimensional matrix github-action jobs with no explicit name are not supported. Please add a name field to the job that combines the matrix parameters into a more readable name. For example \"Build with Go ${{matrix.go}} and Exasol ${{ matrix.db }}\"")
+		}
+	}
+	return jobNames, nil
+}
+
+func (parser WorkflowDefinitionParser) addParametersToJobName(jobName string, parameterValues []interface{}) (result []string, err error) {
 	for _, value := range parameterValues {
 		_, isMap := value.(map[interface{}]interface{})
 		if isMap {
-			return fmt.Errorf("matrix github-action jobs with object parameters and no job name are not supported. Please add a name field to the job that combines the matrix parameters into a more readable name. For example \"Build with Go ${{matrix.go}} and Exasol ${{ matrix.db }}\"")
+			return nil, fmt.Errorf("matrix github-action jobs with object parameters and no job name are not supported. Please add a name field to the job that combines the matrix parameters into a more readable name. For example \"Build with Go ${{matrix.go}} and Exasol ${{ matrix.db }}\"")
 		}
 		extendedJobName := jobName + " (" + parser.convertValueToString(value) + ")"
-		*result = append(*result, extendedJobName)
+		result = append(result, extendedJobName)
 	}
-	return nil
+	return result, nil
 }
 
-func (parser WorkflowDefinitionParser) replaceParametersInJobName(jobName string, matrix map[string][]interface{}, keys []string, parameterCursor int, result *[]string) {
+func (parser WorkflowDefinitionParser) replaceParametersInJobName(jobName string, matrix map[string][]interface{}, keys []string, parameterCursor int) (result []string) {
 	if parameterCursor >= len(keys) {
-		*result = append(*result, jobName)
+		result = append(result, jobName)
 	} else {
 		key := keys[parameterCursor]
 		pattern, err := regexp.Compile("\\${\\{\\s*matrix.\\Q" + key + "\\E\\s*\\}\\}")
@@ -73,9 +84,10 @@ func (parser WorkflowDefinitionParser) replaceParametersInJobName(jobName string
 		}
 		for _, value := range matrix[key] {
 			filledJobName := parser.replaceSpecificParameterInJobName(jobName, value, pattern)
-			parser.replaceParametersInJobName(filledJobName, matrix, keys, parameterCursor+1, result)
+			result = append(result, parser.replaceParametersInJobName(filledJobName, matrix, keys, parameterCursor+1)...)
 		}
 	}
+	return result
 }
 
 func (parser WorkflowDefinitionParser) replaceSpecificParameterInJobName(jobName string, value interface{}, pattern *regexp.Regexp) string {
@@ -95,7 +107,7 @@ func (parser WorkflowDefinitionParser) replaceSpecificParameterInJobName(jobName
 		}
 		return filledJobName
 	default:
-		panic("unsupported type")
+		panic(fmt.Sprintf("unsupported type %v", reflect.TypeOf(value)))
 	}
 }
 
@@ -106,7 +118,7 @@ func (parser WorkflowDefinitionParser) convertValueToString(value interface{}) s
 	case string:
 		return value
 	default:
-		panic("unsupported value type")
+		panic(fmt.Sprintf("unsupported value type %v", reflect.TypeOf(value)))
 	}
 }
 

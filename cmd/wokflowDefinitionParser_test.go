@@ -27,7 +27,6 @@ jobs:
 	suite.Contains(definition.JobsNames, "build")
 	suite.Contains(definition.Trigger, "push")
 	suite.Contains(definition.Name, "CI Build")
-
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithMapSyntax() {
@@ -44,7 +43,6 @@ jobs:
 	suite.Contains(definition.JobsNames, "build")
 	suite.Contains(definition.Trigger, "push")
 	suite.Contains(definition.Name, "CI Build")
-
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithJobName() {
@@ -60,7 +58,6 @@ jobs:
 `)
 	suite.NoError(err)
 	suite.Contains(definition.JobsNames, "My-Job")
-
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithMatrixBuild() {
