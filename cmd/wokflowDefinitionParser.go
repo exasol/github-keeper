@@ -5,7 +5,6 @@ import (
 	"gopkg.in/yaml.v2"
 	"reflect"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -112,14 +111,7 @@ func (parser WorkflowDefinitionParser) replaceSpecificParameterInJobName(jobName
 }
 
 func (parser WorkflowDefinitionParser) convertValueToString(value interface{}) string {
-	switch value := value.(type) {
-	case int:
-		return strconv.Itoa(value)
-	case string:
-		return value
-	default:
-		panic(fmt.Sprintf("unsupported value type %v", reflect.TypeOf(value)))
-	}
+	return fmt.Sprintf("%v", value)
 }
 
 func (parser WorkflowDefinitionParser) getJobName(jobKey string, jobDescription *JobDescriptionInt) string {
