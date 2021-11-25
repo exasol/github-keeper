@@ -160,3 +160,21 @@ jobs:
 	suite.Contains(definition.JobsNames, "build (1)")
 	suite.Contains(definition.JobsNames, "build (2)")
 }
+
+func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithMatrixBuildAndFloatValue() {
+	parser := WorkflowDefinitionParser{}
+	definition, err := parser.ParseWorkflowDefinition(`
+name: CI Build
+on:
+  push:
+jobs:
+  build:
+    strategy:
+      matrix:
+        a: [1.2,2.1]
+    runs-on: ubuntu-latest
+`)
+	suite.NoError(err)
+	suite.Contains(definition.JobsNames, "build (1.2)")
+	suite.Contains(definition.JobsNames, "build (2.1)")
+}
