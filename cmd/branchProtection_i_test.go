@@ -105,40 +105,6 @@ func (suite *BranchProtectionSuite) cleanup() {
 	}
 }
 
-func (suite *BranchProtectionSuite) TestGetChecksForWorkflowContentWithListSyntax() {
-	verifier := BranchProtectionVerifier{}
-	definition, err := verifier.parseWorkflowDefinition(`
-name: CI Build
-on:
-  - push
-jobs:
-  build:
-    runs-on: ubuntu-latest
-`)
-	suite.NoError(err)
-	suite.Contains(definition.JobsNames, "build")
-	suite.Contains(definition.Trigger, "push")
-	suite.Contains(definition.Name, "CI Build")
-
-}
-
-func (suite *BranchProtectionSuite) TestGetChecksForWorkflowContentWithMapSyntax() {
-	verifier := BranchProtectionVerifier{}
-	definition, err := verifier.parseWorkflowDefinition(`
-name: CI Build
-on:
-  push:
-jobs:
-  build:
-    runs-on: ubuntu-latest
-`)
-	suite.NoError(err)
-	suite.Contains(definition.JobsNames, "build")
-	suite.Contains(definition.Trigger, "push")
-	suite.Contains(definition.Name, "CI Build")
-
-}
-
 type TestHasWorkflowPushOrPrTriggerCase struct {
 	trigger        []string
 	expectedResult bool

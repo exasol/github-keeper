@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/go-github/v39/github"
-	"gopkg.in/yaml.v2"
 	"strings"
 )
 
@@ -223,7 +222,7 @@ func (verifier BranchProtectionVerifier) getChecksForWorkflow(workflowFilePath *
 
 func (verifier BranchProtectionVerifier) getChecksForWorkflowContent(content string) ([]string, error) {
 	var result []string
-	workflow, err := verifier.parseWorkflowDefinition(content)
+	workflow, err := WorkflowDefinitionParser{}.ParseWorkflowDefinition(content)
 	if err != nil {
 		return nil, err
 	}
@@ -249,48 +248,6 @@ func (verifier BranchProtectionVerifier) downloadFile(path string) (string, erro
 		return "", err
 	}
 	return workflowFile.GetContent()
-}
-
-func (verifier BranchProtectionVerifier) parseWorkflowDefinition(content string) (*workflowDefinition, error) {
-	parsedYaml := workflowDefinitionInt{}
-	err := yaml.Unmarshal([]byte(content), &parsedYaml)
-	if err != nil {
-		return nil, err
-	}
-	trigger, err := getTriggersOfWorkflowDefinition(&parsedYaml)
-	if err != nil {
-		return nil, err
-	}
-	var jobNames []string
-	for jobName := range parsedYaml.Jobs {
-		jobNames = append(jobNames, jobName)
-	}
-	definition := workflowDefinition{Name: parsedYaml.Name, JobsNames: jobNames, Trigger: trigger}
-	return &definition, nil
-}
-
-func getTriggersOfWorkflowDefinition(parsedYaml *workflowDefinitionInt) ([]string, error) {
-	if triggerMap, hasTriggerMap := parsedYaml.On.(map[interface{}]interface{}); hasTriggerMap {
-		var result []string
-		for trigger := range triggerMap {
-			result = append(result, trigger.(string))
-		}
-		return result, nil
-	} else if triggerList, hasTriggerList := parsedYaml.On.([]interface{}); hasTriggerList {
-		var result []string
-		for _, trigger := range triggerList {
-			result = append(result, trigger.(string))
-		}
-		return result, nil
-	} else {
-		return nil, fmt.Errorf("the GitHub workflow '%v' has a unimplemented trigger definition style", parsedYaml.Name)
-	}
-}
-
-type workflowDefinitionInt struct {
-	Name string                 `yaml:"name"`
-	On   interface{}            `yaml:"on"`
-	Jobs map[string]interface{} `yaml:"jobs"`
 }
 
 type workflowDefinition struct {
