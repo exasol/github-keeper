@@ -11,6 +11,14 @@ import (
 type WorkflowDefinitionParser struct {
 }
 
+type ValidationError struct {
+	message string
+}
+
+func (validationError ValidationError) Error() string {
+	return validationError.message
+}
+
 func (parser WorkflowDefinitionParser) ParseWorkflowDefinition(content string) (*workflowDefinition, error) {
 	parsedYaml := workflowDefinitionInt{}
 	err := yaml.Unmarshal([]byte(content), &parsedYaml)
@@ -54,7 +62,7 @@ func (parser WorkflowDefinitionParser) fillJobNameParametersForMatrixBuild(jobDe
 			}
 			jobNames = append(jobNames, filledNames...)
 		} else {
-			return nil, fmt.Errorf("multi dimensional matrix github-action jobs with no explicit name are not supported. Please add a name field to the job that combines the matrix parameters into a more readable name. For example \"Build with Go ${{matrix.go}} and Exasol ${{ matrix.db }}\"")
+			return nil, ValidationError{"multi dimensional matrix github-action jobs with no explicit name are not supported. Please add a name field to the job that combines the matrix parameters into a more readable name. For example \"Build with Go ${{matrix.go}} and Exasol ${{ matrix.db }}\""}
 		}
 	}
 	return jobNames, nil
@@ -64,7 +72,7 @@ func (parser WorkflowDefinitionParser) addParametersToJobName(jobName string, pa
 	for _, value := range parameterValues {
 		_, isMap := value.(map[interface{}]interface{})
 		if isMap {
-			return nil, fmt.Errorf("matrix github-action jobs with object parameters and no job name are not supported. Please add a name field to the job that combines the matrix parameters into a more readable name. For example \"Build with Go ${{matrix.go}} and Exasol ${{ matrix.db }}\"")
+			return nil, ValidationError{"matrix github-action jobs with object parameters and no job name are not supported. Please add a name field to the job that combines the matrix parameters into a more readable name. For example \"Build with Go ${{matrix.go}} and Exasol ${{ matrix.db }}\""}
 		}
 		extendedJobName := jobName + " (" + parser.convertValueToString(value) + ")"
 		result = append(result, extendedJobName)

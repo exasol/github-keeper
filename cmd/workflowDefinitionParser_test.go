@@ -178,3 +178,19 @@ jobs:
 	suite.Contains(definition.JobsNames, "build (1.2)")
 	suite.Contains(definition.JobsNames, "build (2.1)")
 }
+
+func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowForUnsupportedSyntax() {
+	parser := WorkflowDefinitionParser{}
+	_, err := parser.ParseWorkflowDefinition(`
+name: CI Build
+on:
+  push:
+jobs:
+  build:
+    strategy:
+      matrix:
+        test-path: ${{fromJson(needs.prep-testbed.outputs.matrix)}}
+    runs-on: ubuntu-latest
+`)
+	suite.Assert().Error(err)
+}

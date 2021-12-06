@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/go-github/v39/github"
+	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -146,4 +148,53 @@ func (suite *BranchProtectionSuite) TestCheckIfBranchRestrictionsAreAppliedWithN
 	existing := github.BranchRestrictions{Users: []*github.User{{Name: &testUserName}}, Teams: []*github.Team{{Name: &testTeamName}}, Apps: []*github.App{{Name: &testAppName}}}
 	request := github.BranchRestrictionsRequest{Users: []string{"otherUser"}, Teams: []string{testTeamName}, Apps: []string{testAppName}}
 	suite.Assert().False(verifier.checkIfBranchRestrictionsAreApplied(&existing, &request))
+}
+
+func (suite *BranchProtectionSuite) TestGetChecksForIllegalWorkflowContent() {
+	verifier := BranchProtectionVerifier{}
+	fileName := "myFile"
+	output := suite.CaptureOutput(func() {
+		verifier.getChecksForWorkflowContent(`
+jobs:
+  build:
+    strategy:
+      matrix:
+        test-path: ${{fromJson(needs.prep-testbed.outputs.matrix)}}
+    runs-on: ubuntu-latest
+`, &fileName)
+	})
+	suite.Contains(output, "\x1b[33mWarning:")
+}
+
+func (suite *BranchProtectionSuite) TestGetChecksForWorkflowContentWithValidationError() {
+	verifier := BranchProtectionVerifier{}
+	fileName := "myFile"
+	if os.Getenv("RUN_TEST") == "1" {
+		verifier.getChecksForWorkflowContent(`
+name: CI Build
+on:
+  push:
+jobs:
+  build:
+    strategy:
+      matrix:
+        a:
+         - id: 1
+           num: 10
+         - id: 2
+           num: 20
+    runs-on: ubuntu-latest
+`, &fileName)
+	} else {
+		cmd := exec.Command(os.Args[0], "-test.run=TestBranchProtectionSuite/TestGetChecksForWorkflowContentWithValidationError")
+		cmd.Env = append(os.Environ(), "RUN_TEST=1")
+		output, err := cmd.Output()
+		exitCodeError, ok := err.(*exec.ExitError)
+		if ok {
+			suite.Assert().Equal(1, exitCodeError.ExitCode())
+			suite.Contains(string(output), "\x1b[31mValidation Error for myFile:")
+		} else {
+			suite.Fail("Test did not fail by exit: %v", err.Error())
+		}
+	}
 }
