@@ -25,6 +25,7 @@ Code name: Improved GitHub Actions
 * #33: Fixed branch protection rule creation for projects with matrix builds
 * #31: Fixed configure-repo for repositories with no workflows
 * #35: Fixed branch protection creation for repos with float matrix build parameter
+* #39: Fixed branch protection creation for runtime generated matrix builds (printing warning that it's not possible)
 
 ## Refactoring
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/go-github/v39/github"
+	"os"
 	"strings"
 )
 
@@ -217,20 +218,28 @@ func (verifier BranchProtectionVerifier) getChecksForWorkflow(workflowFilePath *
 	if err != nil {
 		return nil, err
 	}
-	return verifier.getChecksForWorkflowContent(content)
+	return verifier.getChecksForWorkflowContent(content, workflowFilePath), nil
 }
 
-func (verifier BranchProtectionVerifier) getChecksForWorkflowContent(content string) ([]string, error) {
-	var result []string
+func (verifier BranchProtectionVerifier) getChecksForWorkflowContent(content string, fileName *string) []string {
 	workflow, err := WorkflowDefinitionParser{}.ParseWorkflowDefinition(content)
 	if err != nil {
-		return nil, err
+		switch err := err.(type) {
+		case ValidationError:
+			fmt.Printf("%vValidation Error for %v: %v %v\n", consoleColorRed, *fileName, err.Error(), consoleColorReset)
+			os.Exit(1)
+		default:
+			fmt.Printf("%vWarning: Failed to parse workflow definition %v. Probably you use some advanced matrix build features there. Github-keeper will not add the checks from this workflow to the branch protection. Please add them manually. %v\n", consoleColorYellow, *fileName, consoleColorReset)
+			var emptyResult []string
+			return emptyResult
+		}
 	}
 	hasWorkflowPushOrPrTrigger := verifier.hasWorkflowPushOrPrTrigger(workflow)
 	if hasWorkflowPushOrPrTrigger {
-		return workflow.JobsNames, nil
+		return workflow.JobsNames
 	}
-	return result, nil
+	var emptyResult []string
+	return emptyResult
 }
 
 func (verifier BranchProtectionVerifier) hasWorkflowPushOrPrTrigger(parsedYaml *workflowDefinition) bool {
