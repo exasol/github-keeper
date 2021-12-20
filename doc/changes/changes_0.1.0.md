@@ -12,6 +12,7 @@ Code name: Improved GitHub Actions
 * #23: Enabled delete merged branches
 * #22: Enable auto-merge
 * #15: Added validation for slack web-hook
+* #41: Added command for reactivating disabled GitHub actions
 
 ## Refactoring
 
