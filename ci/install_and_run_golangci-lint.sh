@@ -1,5 +1,5 @@
 #!/bin/bash
-curl -sfSL -o install.sh https://raw.githubusercontent.com/golangci/golangci-lint/v1.42.1/install.sh
-echo "0762a15cd7ac4ef439cdfb63bf12865b53c03543c0981b5d46fb542497238b829a33334a288c09d356ec8f797804dfed56f687cbcffcf853ff93da6da4106736 install.sh" | sha512sum -c
-sh ./install.sh -b "$(go env GOPATH)/bin" v1.42.1
+curl -sfSL -o install.sh https://raw.githubusercontent.com/golangci/golangci-lint/v1.44.1/install.sh
+echo "91b7e19e60c36194ea02cedb90af5f4d93b5725dc0bfa4505bdfabbc79e809ffd2f04f783e309bde0c7c383d5a1d5719244c3e4306f6cff19c3c67748388b0db install.sh" | sha512sum -c
+sh ./install.sh -b "$(go env GOPATH)/bin" v1.44.1
 ~/go/bin/golangci-lint run

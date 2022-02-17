@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
 	"path"
+
+	"github.com/spf13/cobra"
 )
 
 var configureRepoCmd = &cobra.Command{
@@ -23,7 +24,7 @@ var configureRepoCmd = &cobra.Command{
 		}
 		secrets := ReadSecretsFromYaml(secretsFile)
 		for _, repo := range args {
-			fmt.Printf("\n%v \n", repo)
+			fmt.Printf("\nhttps://github.com/exasol/%v\n", repo)
 			branchProtectionVerifier := BranchProtectionVerifier{client: client, repoName: repo}
 			branchProtectionVerifier.CheckIfBranchProtectionIsApplied(fix)
 			UnifyLabels(repo, client, fix)

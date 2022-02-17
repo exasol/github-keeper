@@ -3,9 +3,10 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/google/go-github/v39/github"
 	"os"
 	"strings"
+
+	"github.com/google/go-github/v39/github"
 )
 
 type BranchProtectionVerifier struct {
@@ -197,6 +198,9 @@ func (verifier BranchProtectionVerifier) getRequiredChecks(requireSonar bool) ([
 	}
 	for _, fileDesc := range directory {
 		workflowFilePath := fileDesc.Path
+		if *fileDesc.Type == "dir" {
+			continue
+		}
 		requiredChecksForWorkflow, err := verifier.getChecksForWorkflow(workflowFilePath)
 		if err != nil {
 			return nil, err

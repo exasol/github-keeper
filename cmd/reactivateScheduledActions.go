@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+
 	"github.com/google/go-github/v39/github"
 	"github.com/spf13/cobra"
 )
@@ -27,7 +28,7 @@ func reEnableWorkflows(repoName string, client *github.Client) {
 	}
 	for _, workflow := range workflows.Workflows {
 		if *workflow.State != "active" {
-			fmt.Printf("Reactivating %v/%v", repoName, *workflow.Name)
+			fmt.Printf("Reactivating %v/%v\n", repoName, *workflow.Name)
 			_, err := client.Actions.EnableWorkflowByID(context.Background(), "exasol", repoName, *workflow.ID)
 			if err != nil {
 				panic(fmt.Sprintf("Failed to re-enable workflow '%s' of repository '%s'. Cause: %s", *workflow.Name, repoName, err.Error()))
