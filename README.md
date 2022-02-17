@@ -2,6 +2,9 @@
 
 GitHub keeper is a CLI tool that helps to unify our repositories.
 
+[![CI Build](https://github.com/exasol/github-keeper/actions/workflows/ci-build.yml/badge.svg)](https://github.com/exasol/github-keeper/actions/workflows/ci-build.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=com.exasol%3Agithub-keeper&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=com.exasol%3Agithub-keeper)
+
 Features:
 
 * List all Exasol repos where you are admin (`list-my-repos`)
