@@ -1,4 +1,4 @@
-# Github-Keeper 0.1.0, released 2021-??-??
+# Github-Keeper 0.1.0, released 2022-02-17
 
 Code name: Improved GitHub Actions
 
@@ -27,6 +27,7 @@ Code name: Improved GitHub Actions
 * #31: Fixed configure-repo for repositories with no workflows
 * #35: Fixed branch protection creation for repos with float matrix build parameter
 * #39: Fixed branch protection creation for runtime generated matrix builds (printing warning that it's not possible)
+* #43: Fixed handling of directories in `.github/workflows/`
 
 ## Refactoring
 
