@@ -27,7 +27,7 @@ func (suite *UnifyLabelsSuite) TestCreateLables() {
 }
 
 func (suite *UnifyLabelsSuite) runUnifyLabelCommand(fix bool) {
-	UnifyLabels(suite.testRepo, getGithubClient(), fix)
+	UnifyLabels(suite.testRepo, suite.githubClient, fix)
 }
 
 func (suite *UnifyLabelsSuite) TestRenameLabel() {
@@ -50,7 +50,7 @@ func (suite *UnifyLabelsSuite) TestRenameLabel() {
 func (suite *UnifyLabelsSuite) TestMigrateLabel() {
 	suite.cleanup()       // to be sure we start with a defined state
 	defer suite.cleanup() // to leave a clean repo
-	githubClient := getGithubClient()
+	githubClient := suite.githubClient
 	blockedLabel := "blocked"
 	blockedYesLabel := "blocked:yes"
 	_, _, err := githubClient.Issues.CreateLabel(context.Background(), suite.testOrg, suite.testRepo, &github.Label{Name: &blockedYesLabel})
@@ -72,7 +72,7 @@ func (suite *UnifyLabelsSuite) TestMigrateLabel() {
 func (suite *UnifyLabelsSuite) TestChangeColor() {
 	suite.cleanup()       // to be sure we start with a defined state
 	defer suite.cleanup() // to leave a clean repo
-	githubClient := getGithubClient()
+	githubClient := suite.githubClient
 	featureLabel := "feature"
 	otherColor := "112233"
 	_, _, err := githubClient.Issues.CreateLabel(context.Background(), suite.testOrg, suite.testRepo, &github.Label{Name: &featureLabel, Color: &otherColor})
@@ -87,7 +87,7 @@ func (suite *UnifyLabelsSuite) TestChangeColor() {
 func (suite *UnifyLabelsSuite) TestDeleteLabel() {
 	suite.cleanup()       // to be sure we start with a defined state
 	defer suite.cleanup() // to leave a clean repo
-	githubClient := getGithubClient()
+	githubClient := suite.githubClient
 	unknownLabel := "unknown123"
 	_, _, err := githubClient.Issues.CreateLabel(context.Background(), suite.testOrg, suite.testRepo, &github.Label{Name: &unknownLabel})
 	suite.NoError(err)
@@ -107,7 +107,7 @@ func (suite *UnifyLabelsSuite) cleanup() {
 }
 
 func (suite *UnifyLabelsSuite) deleteAllLabels() {
-	githubClient := getGithubClient()
+	githubClient := suite.githubClient
 	labels, _, err := githubClient.Issues.ListLabels(context.Background(), suite.testOrg, suite.testRepo, &github.ListOptions{PerPage: 100})
 	suite.NoError(err)
 	for _, label := range labels {
@@ -117,7 +117,7 @@ func (suite *UnifyLabelsSuite) deleteAllLabels() {
 }
 
 func (suite *UnifyLabelsSuite) closeAllIssues() {
-	githubClient := getGithubClient()
+	githubClient := suite.githubClient
 	issues, _, err := githubClient.Issues.ListByRepo(context.Background(), suite.testOrg, suite.testRepo, &github.IssueListByRepoOptions{ListOptions: github.ListOptions{PerPage: 100}})
 	suite.NoError(err)
 	for _, issue := range issues {

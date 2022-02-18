@@ -3,11 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/google/go-github/v39/github"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
+
+	"github.com/google/go-github/v39/github"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -23,7 +24,7 @@ func TestBranchProtectionSuite(t *testing.T) {
 func (suite *BranchProtectionSuite) TestCreateBranchProtection() {
 	suite.cleanup()
 	defer suite.cleanup()
-	verifier := BranchProtectionVerifier{repoName: suite.testRepo, client: getGithubClient()}
+	verifier := BranchProtectionVerifier{repoName: suite.testRepo, client: suite.githubClient}
 	verifier.CheckIfBranchProtectionIsApplied(true)
 	protection, _, err := suite.githubClient.Repositories.GetBranchProtection(context.Background(), suite.testOrg, suite.testRepo, "master")
 	suite.NoError(err)
@@ -45,7 +46,7 @@ func (suite *BranchProtectionSuite) TestBranchProtectionMissing() {
 	suite.cleanup()
 	defer suite.cleanup()
 	output := suite.CaptureOutput(func() {
-		verifier := BranchProtectionVerifier{repoName: suite.testRepo, client: getGithubClient()}
+		verifier := BranchProtectionVerifier{repoName: suite.testRepo, client: suite.githubClient}
 		verifier.CheckIfBranchProtectionIsApplied(false)
 	})
 	suite.Assert().Equal("exasol/testing-release-robot does not have a branch protection rule for default branch master. Use --fix to create it. This error can also happen if you don't have admin privileges on the repo.", output)
@@ -55,7 +56,7 @@ func (suite *BranchProtectionSuite) TestUpdateIncompleteBranchProtection() {
 	suite.cleanup()
 	defer suite.cleanup()
 	suite.createEmptyBranchProtection()
-	verifier := BranchProtectionVerifier{repoName: suite.testRepo, client: getGithubClient()}
+	verifier := BranchProtectionVerifier{repoName: suite.testRepo, client: suite.githubClient}
 	verifier.CheckIfBranchProtectionIsApplied(true)
 	protection, _, err := suite.githubClient.Repositories.GetBranchProtection(context.Background(), suite.testOrg, suite.testRepo, "master")
 	suite.NoError(err)
@@ -72,7 +73,7 @@ func (suite *BranchProtectionSuite) TestBranchProtectionUpdatePreserversExisting
 	}
 	_, _, err := suite.githubClient.Repositories.UpdateBranchProtection(context.Background(), suite.testOrg, suite.testRepo, suite.testDefaultBranch, &request)
 	suite.NoError(err)
-	verifier := BranchProtectionVerifier{repoName: suite.testRepo, client: getGithubClient()}
+	verifier := BranchProtectionVerifier{repoName: suite.testRepo, client: suite.githubClient}
 	verifier.CheckIfBranchProtectionIsApplied(true)
 	protection, _, err := suite.githubClient.Repositories.GetBranchProtection(context.Background(), suite.testOrg, suite.testRepo, "master")
 	suite.NoError(err)
@@ -84,7 +85,7 @@ func (suite *BranchProtectionSuite) TestBranchProtectionIncomplete() {
 	defer suite.cleanup()
 	suite.createEmptyBranchProtection()
 	output := suite.CaptureOutput(func() {
-		verifier := BranchProtectionVerifier{repoName: suite.testRepo, client: getGithubClient()}
+		verifier := BranchProtectionVerifier{repoName: suite.testRepo, client: suite.githubClient}
 		verifier.CheckIfBranchProtectionIsApplied(false)
 	})
 	suite.Assert().Equal("exasol/testing-release-robot has a branch protection for default branch master that is not compliant to our standards. Use --fix to update.\n", output)
@@ -149,7 +150,7 @@ func (suite *BranchProtectionSuite) TestCheckIfBranchRestrictionsAreAppliedWithN
 }
 
 func (suite *BranchProtectionSuite) TestGetChecksForIllegalWorkflowContent() {
-	verifier := BranchProtectionVerifier{}
+	verifier := BranchProtectionVerifier{repoName: suite.testRepo, client: suite.githubClient}
 	fileName := "myFile"
 	output := suite.CaptureOutput(func() {
 		verifier.getChecksForWorkflowContent(`
@@ -165,7 +166,7 @@ jobs:
 }
 
 func (suite *BranchProtectionSuite) TestGetChecksForWorkflowContentWithValidationError() {
-	verifier := BranchProtectionVerifier{}
+	verifier := BranchProtectionVerifier{repoName: suite.testRepo, client: suite.githubClient}
 	fileName := "myFile"
 	if os.Getenv("RUN_TEST") == "1" {
 		verifier.getChecksForWorkflowContent(`
@@ -190,7 +191,7 @@ jobs:
 		exitCodeError, ok := err.(*exec.ExitError)
 		if ok {
 			suite.Assert().Equal(1, exitCodeError.ExitCode())
-			suite.Contains(string(output), "\x1b[31mValidation Error for myFile:")
+			suite.Contains(string(output), "\x1b[31mValidation Error for 'https://github.com/exasol/testing-release-robot/blob/master/myFile':")
 		} else {
 			suite.Fail("Test did not fail by exit: %v", err.Error())
 		}

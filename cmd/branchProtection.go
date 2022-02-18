@@ -226,14 +226,15 @@ func (verifier BranchProtectionVerifier) getChecksForWorkflow(workflowFilePath *
 }
 
 func (verifier BranchProtectionVerifier) getChecksForWorkflowContent(content string, fileName *string) []string {
+	fileUrl := fmt.Sprintf("https://github.com/exasol/%s/blob/%s/%s", verifier.repoName, verifier.getRepo().GetDefaultBranch(), *fileName)
 	workflow, err := WorkflowDefinitionParser{}.ParseWorkflowDefinition(content)
 	if err != nil {
 		switch err := err.(type) {
 		case ValidationError:
-			fmt.Printf("%vValidation Error for %v: %v %v\n", consoleColorRed, *fileName, err.Error(), consoleColorReset)
+			fmt.Printf("%vValidation Error for '%v': %v %v\n", consoleColorRed, fileUrl, err.Error(), consoleColorReset)
 			os.Exit(1)
 		default:
-			fmt.Printf("%vWarning: Failed to parse workflow definition %v. Probably you use some advanced matrix build features there. Github-keeper will not add the checks from this workflow to the branch protection. Please add them manually. %v\n", consoleColorYellow, *fileName, consoleColorReset)
+			fmt.Printf("%vWarning: Failed to parse workflow definition '%v'. Probably you use some advanced matrix build features there. Github-keeper will not add the checks from this workflow to the branch protection. Please add them manually. %v\n", consoleColorYellow, fileUrl, consoleColorReset)
 			var emptyResult []string
 			return emptyResult
 		}
