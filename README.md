@@ -18,6 +18,10 @@ Features:
        ```sh
        sudo apt install golang-go
        ```
+   * On macOS:
+       ```sh
+       brew install golang
+       ```
 2. Install dependendent packages:
     ```
     cd $HOME/<PATH TO THIS REPO>/
@@ -37,7 +41,7 @@ vault.
 
 ## Usage
 
-in the github-keeper directory run:
+In the github-keeper directory run:
 
 ```shell
 go run .
@@ -48,6 +52,16 @@ Hint: To verify the setup of all your repos use:
 ```shell
 go run . configure-repo $(go run . list-my-repos)
 ```
+
+## Installation
+
+You can install github-keeper to `$HOME/go/bin/github-keeper` by running:
+
+```shell
+go install
+```
+
+After adding `$HOME/go/bin/` to your `PATH` you can run github-keeper by just calling `github-keeper`.
 
 ### Tips
 
