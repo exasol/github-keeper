@@ -120,11 +120,9 @@ func (suite *BranchProtectionSuite) TestHasWorkflowPushOrPrTrigger() {
 		{trigger: []string{"pull_request"}, expectedResult: true},
 		{trigger: []string{"other", "push"}, expectedResult: true},
 	}
-	verifier := BranchProtectionVerifier{}
 	for _, testCase := range cases {
 		suite.Run(fmt.Sprintf("trigger: %v", testCase.trigger), func() {
-			definition := workflowDefinition{Trigger: testCase.trigger}
-			result := verifier.hasWorkflowPushOrPrTrigger(&definition)
+			result := hasWorkflowPushOrPrTrigger(testCase.trigger)
 			suite.Equal(testCase.expectedResult, result)
 		})
 	}

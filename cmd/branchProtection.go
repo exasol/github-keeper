@@ -238,7 +238,7 @@ func (verifier BranchProtectionVerifier) getChecksForWorkflowContent(content str
 			return emptyResult
 		}
 	}
-	hasWorkflowPushOrPrTrigger := verifier.hasWorkflowPushOrPrTrigger(workflow)
+	hasWorkflowPushOrPrTrigger := hasWorkflowPushOrPrTrigger(workflow.Trigger)
 	if hasWorkflowPushOrPrTrigger {
 		return workflow.JobsNames
 	}
@@ -246,8 +246,8 @@ func (verifier BranchProtectionVerifier) getChecksForWorkflowContent(content str
 	return emptyResult
 }
 
-func (verifier BranchProtectionVerifier) hasWorkflowPushOrPrTrigger(parsedYaml *workflowDefinition) bool {
-	for _, trigger := range parsedYaml.Trigger {
+func hasWorkflowPushOrPrTrigger(triggers []string) bool {
+	for _, trigger := range triggers {
 		if trigger == "push" || trigger == "pull_request" {
 			return true
 		}

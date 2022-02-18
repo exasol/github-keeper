@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/stretchr/testify/suite"
 	"testing"
+
+	"github.com/stretchr/testify/suite"
 )
 
 type WorkflowDefinitionParserSuite struct {
@@ -141,6 +142,26 @@ jobs:
     runs-on: ubuntu-latest
 `)
 	suite.Equal("matrix github-action jobs with object parameters and no job name are not supported. Please add a name field to the job that combines the matrix parameters into a more readable name. For example \"Build with Go ${{matrix.go}} and Exasol ${{ matrix.db }}\"", err.Error())
+}
+
+func (suite *WorkflowDefinitionParserSuite) TestMatrixBuildWithoutNameIgnoredForNonPullRequestWorkflows() {
+	parser := WorkflowDefinitionParser{}
+	_, err := parser.ParseWorkflowDefinition(`
+name: CI Build
+on:
+  other:
+jobs:
+  build:
+    strategy:
+      matrix:
+        a:
+         - id: 1
+           num: 10
+         - id: 2
+           num: 20
+    runs-on: ubuntu-latest
+`)
+	suite.NoError(err)
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithMatrixBuildAndNoName() {
