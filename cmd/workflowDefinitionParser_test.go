@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
 `)
 	suite.NoError(err)
+	suite.Len(definition.JobsNames, 1)
 	suite.Contains(definition.JobsNames, "build")
 	suite.Contains(definition.Trigger, "push")
 	suite.Contains(definition.Name, "CI Build")
@@ -41,6 +42,7 @@ jobs:
     runs-on: ubuntu-latest
 `)
 	suite.NoError(err)
+	suite.Len(definition.JobsNames, 1)
 	suite.Contains(definition.JobsNames, "build")
 	suite.Contains(definition.Trigger, "push")
 	suite.Contains(definition.Name, "CI Build")
@@ -58,6 +60,7 @@ jobs:
     runs-on: ubuntu-latest
 `)
 	suite.NoError(err)
+	suite.Len(definition.JobsNames, 1)
 	suite.Contains(definition.JobsNames, "My-Job")
 }
 
@@ -77,6 +80,7 @@ jobs:
     runs-on: ubuntu-latest
 `)
 	suite.NoError(err)
+	suite.Len(definition.JobsNames, 4)
 	suite.Contains(definition.JobsNames, "Build with A 1 and B 3")
 	suite.Contains(definition.JobsNames, "Build with A 1 and B 4")
 	suite.Contains(definition.JobsNames, "Build with A 2 and B 3")
@@ -103,8 +107,31 @@ jobs:
     runs-on: ubuntu-latest
 `)
 	suite.NoError(err)
+	suite.Len(definition.JobsNames, 2)
 	suite.Contains(definition.JobsNames, "Build with id 1, num 10 and B 3")
 	suite.Contains(definition.JobsNames, "Build with id 2, num 20 and B 3")
+}
+
+func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithMatrixBuildWithConfigSyntax() {
+	parser := WorkflowDefinitionParser{}
+	definition, err := parser.ParseWorkflowDefinition(`
+name: CI Build
+on:
+  push:
+jobs:
+  build:
+    strategy:
+      matrix:
+        config:
+          - {a: 10, b: 3}
+          - {a: 20, b: 3}
+    name: Build with A ${{ matrix.a }} and B ${{ matrix.b }}
+    runs-on: ubuntu-latest
+`)
+	suite.NoError(err)
+	suite.Len(definition.JobsNames, 2)
+	suite.Contains(definition.JobsNames, "Build with A 10 and B 3")
+	suite.Contains(definition.JobsNames, "Build with A 20 and B 3")
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithMultiDimensionMatrixBuildAndNoName() {
@@ -178,6 +205,7 @@ jobs:
     runs-on: ubuntu-latest
 `)
 	suite.NoError(err)
+	suite.Len(definition.JobsNames, 2)
 	suite.Contains(definition.JobsNames, "build (1)")
 	suite.Contains(definition.JobsNames, "build (2)")
 }
@@ -196,6 +224,7 @@ jobs:
     runs-on: ubuntu-latest
 `)
 	suite.NoError(err)
+	suite.Len(definition.JobsNames, 2)
 	suite.Contains(definition.JobsNames, "build (1.2)")
 	suite.Contains(definition.JobsNames, "build (2.1)")
 }
