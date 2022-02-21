@@ -43,6 +43,15 @@ func (parser WorkflowDefinitionParser) ParseWorkflowDefinition(content string) (
 	return &definition, nil
 }
 
+func hasWorkflowPushOrPrTrigger(triggers []string) bool {
+	for _, trigger := range triggers {
+		if trigger == "push" || trigger == "pull_request" {
+			return true
+		}
+	}
+	return false
+}
+
 func getJobNames(jobs map[string]JobDescriptionInt, parser WorkflowDefinitionParser) ([]string, error) {
 	var jobNames []string
 	for jobKey, jobDescription := range jobs {

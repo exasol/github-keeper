@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -111,22 +110,6 @@ func (suite *BranchProtectionSuite) cleanup() {
 type TestHasWorkflowPushOrPrTriggerCase struct {
 	trigger        []string
 	expectedResult bool
-}
-
-func (suite *BranchProtectionSuite) TestHasWorkflowPushOrPrTrigger() {
-	cases := []TestHasWorkflowPushOrPrTriggerCase{
-		{trigger: []string{""}, expectedResult: false},
-		{trigger: []string{"other"}, expectedResult: false},
-		{trigger: []string{"push"}, expectedResult: true},
-		{trigger: []string{"pull_request"}, expectedResult: true},
-		{trigger: []string{"other", "push"}, expectedResult: true},
-	}
-	for _, testCase := range cases {
-		suite.Run(fmt.Sprintf("trigger: %v", testCase.trigger), func() {
-			result := hasWorkflowPushOrPrTrigger(testCase.trigger)
-			suite.Equal(testCase.expectedResult, result)
-		})
-	}
 }
 
 func (suite *BranchProtectionSuite) TestCheckIfBranchRestrictionsAreAppliedWithEqualInputs() {

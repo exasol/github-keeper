@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -12,6 +13,22 @@ type WorkflowDefinitionParserSuite struct {
 
 func TestWorkflowDefinitionParserSuite(t *testing.T) {
 	suite.Run(t, new(WorkflowDefinitionParserSuite))
+}
+
+func (suite *WorkflowDefinitionParserSuite) TestHasWorkflowPushOrPrTrigger() {
+	cases := []TestHasWorkflowPushOrPrTriggerCase{
+		{trigger: []string{""}, expectedResult: false},
+		{trigger: []string{"other"}, expectedResult: false},
+		{trigger: []string{"push"}, expectedResult: true},
+		{trigger: []string{"pull_request"}, expectedResult: true},
+		{trigger: []string{"other", "push"}, expectedResult: true},
+	}
+	for _, testCase := range cases {
+		suite.Run(fmt.Sprintf("trigger: %v", testCase.trigger), func() {
+			result := hasWorkflowPushOrPrTrigger(testCase.trigger)
+			suite.Equal(testCase.expectedResult, result)
+		})
+	}
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithListSyntax() {

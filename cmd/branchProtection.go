@@ -247,15 +247,6 @@ func (verifier BranchProtectionVerifier) getChecksForWorkflowContent(content str
 	return emptyResult
 }
 
-func hasWorkflowPushOrPrTrigger(triggers []string) bool {
-	for _, trigger := range triggers {
-		if trigger == "push" || trigger == "pull_request" {
-			return true
-		}
-	}
-	return false
-}
-
 func (verifier BranchProtectionVerifier) downloadFile(path string) (string, error) {
 	workflowFile, _, _, err := verifier.client.Repositories.GetContents(context.Background(), "exasol", verifier.repoName, path, &github.RepositoryContentGetOptions{})
 	if err != nil {
