@@ -229,6 +229,63 @@ jobs:
 	suite.Contains(definition.JobsNames, "build (2.1)")
 }
 
+func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithMatrixNotAllVariablesUsed() {
+	parser := WorkflowDefinitionParser{}
+	definition, err := parser.ParseWorkflowDefinition(`
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  examples:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: "3.9"
+            exasol-tag: latest-7.1
+            exasol-port: 8563
+
+          - python-version: "3.9"
+            exasol-tag: latest-7.0
+            exasol-port: 8563
+
+          - python-version: "3.6"
+            exasol-tag: latest-6.2
+            exasol-port: 8888
+    name: "Build with Python ${{ matrix.python-version }} and Exasol ${{ matrix.exasol-tag }}"
+`)
+	suite.NoError(err)
+	suite.Len(definition.JobsNames, 3)
+	suite.Contains(definition.JobsNames, "Build with Python 3.9 and Exasol latest-7.1")
+	suite.Contains(definition.JobsNames, "Build with Python 3.9 and Exasol latest-7.0")
+	suite.Contains(definition.JobsNames, "Build with Python 3.6 and Exasol latest-6.2")
+}
+
+func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithSingleItemMatrix() {
+	parser := WorkflowDefinitionParser{}
+	definition, err := parser.ParseWorkflowDefinition(`
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  ssl_cert:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: 3.9
+            exasol-tag: 7.1.6
+    name: "Build SSL-Cert with Python ${{ matrix.python-version }} and Exasol ${{ matrix.exasol-tag }}"
+`)
+	suite.NoError(err)
+	suite.Len(definition.JobsNames, 1)
+	suite.Contains(definition.JobsNames, "Build SSL-Cert with Python 3.9 and Exasol 7.1.6")
+}
+
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowForUnsupportedSyntax() {
 	parser := WorkflowDefinitionParser{}
 	_, err := parser.ParseWorkflowDefinition(`
