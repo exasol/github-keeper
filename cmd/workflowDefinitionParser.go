@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"reflect"
 	"regexp"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
 type WorkflowDefinitionParser struct {
@@ -30,7 +31,30 @@ func (parser WorkflowDefinitionParser) ParseWorkflowDefinition(content string) (
 		return nil, err
 	}
 	var jobNames []string
-	for jobKey, jobDescription := range parsedYaml.Jobs {
+	if hasWorkflowPushOrPrTrigger(trigger) {
+		jobNames, err = getJobNames(parsedYaml.Jobs, parser)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		jobNames = nil
+	}
+	definition := workflowDefinition{Name: parsedYaml.Name, JobsNames: jobNames, Trigger: trigger}
+	return &definition, nil
+}
+
+func hasWorkflowPushOrPrTrigger(triggers []string) bool {
+	for _, trigger := range triggers {
+		if trigger == "push" || trigger == "pull_request" {
+			return true
+		}
+	}
+	return false
+}
+
+func getJobNames(jobs map[string]JobDescriptionInt, parser WorkflowDefinitionParser) ([]string, error) {
+	var jobNames []string
+	for jobKey, jobDescription := range jobs {
 		jobName := parser.getJobName(jobKey, &jobDescription)
 		if jobDescription.Strategy != nil && len(jobDescription.Strategy.Matrix) != 0 {
 			jobNamesForThisJob, err := parser.fillJobNameParametersForMatrixBuild(jobDescription, jobName)
@@ -42,8 +66,7 @@ func (parser WorkflowDefinitionParser) ParseWorkflowDefinition(content string) (
 			jobNames = append(jobNames, jobName)
 		}
 	}
-	definition := workflowDefinition{Name: parsedYaml.Name, JobsNames: jobNames, Trigger: trigger}
-	return &definition, nil
+	return jobNames, nil
 }
 
 func (parser WorkflowDefinitionParser) fillJobNameParametersForMatrixBuild(jobDescription JobDescriptionInt, jobName string) (jobNames []string, err error) {
