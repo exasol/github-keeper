@@ -260,12 +260,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python-version: "3.9"
+          - python-version: 3.9
             exasol-tag: latest-7.1
             exasol-port: 8563
 
-          - python-version: "3.9"
-            exasol-tag: latest-7.0
+          - python-version: 3.95
+            exasol-tag: "latest-7.0"
             exasol-port: 8563
 
           - python-version: "3.6"
@@ -276,7 +276,7 @@ jobs:
 	suite.NoError(err)
 	suite.Len(definition.JobsNames, 3)
 	suite.Contains(definition.JobsNames, "Build with Python 3.9 and Exasol latest-7.1")
-	suite.Contains(definition.JobsNames, "Build with Python 3.9 and Exasol latest-7.0")
+	suite.Contains(definition.JobsNames, "Build with Python 3.95 and Exasol latest-7.0")
 	suite.Contains(definition.JobsNames, "Build with Python 3.6 and Exasol latest-6.2")
 }
 
