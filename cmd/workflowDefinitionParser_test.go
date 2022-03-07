@@ -331,14 +331,16 @@ func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowWithFloatPar
       strategy:
         fail-fast: false
         matrix:
-          python: [3.6]
+          python: [3.6, 3.72, 3.86]
           exasol_version:
             - 7.1.6
       name: Run Tests (Python-${{ matrix.python }}, Exasol-${{ matrix.exasol_version }})
 `)
 	suite.NoError(err)
-	suite.Len(definition.JobsNames, 1)
-	suite.Contains(definition.JobsNames, "Run Tests (Python-3.600000, Exasol-7.1.6)")
+	suite.Len(definition.JobsNames, 3)
+	suite.Contains(definition.JobsNames, "Run Tests (Python-3.6, Exasol-7.1.6)")
+	suite.Contains(definition.JobsNames, "Run Tests (Python-3.7, Exasol-7.1.6)")
+	suite.Contains(definition.JobsNames, "Run Tests (Python-3.9, Exasol-7.1.6)")
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowWithIntParameter() {

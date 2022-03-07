@@ -125,7 +125,7 @@ func (parser WorkflowDefinitionParser) replaceSpecificParameterInJobName(jobName
 	case string:
 		return pattern.ReplaceAllString(jobName, value)
 	case float64:
-		return pattern.ReplaceAllString(jobName, fmt.Sprintf("%f", value))
+		return pattern.ReplaceAllString(jobName, fmt.Sprintf("%.1f", value))
 	case int:
 		return pattern.ReplaceAllString(jobName, fmt.Sprintf("%d", value))
 	case bool:
