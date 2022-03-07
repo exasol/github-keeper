@@ -124,6 +124,12 @@ func (parser WorkflowDefinitionParser) replaceSpecificParameterInJobName(jobName
 	switch value := value.(type) {
 	case string:
 		return pattern.ReplaceAllString(jobName, value)
+	case float64:
+		return pattern.ReplaceAllString(jobName, fmt.Sprintf("%.1f", value))
+	case int:
+		return pattern.ReplaceAllString(jobName, fmt.Sprintf("%d", value))
+	case bool:
+		return pattern.ReplaceAllString(jobName, fmt.Sprintf("%t", value))
 	case map[interface{}]interface{}:
 		filledJobName := jobName
 		for objectKey, objectValue := range value {
