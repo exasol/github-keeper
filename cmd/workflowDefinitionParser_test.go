@@ -318,3 +318,69 @@ jobs:
 `)
 	suite.Assert().Error(err)
 }
+
+func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowWithFloatParameter() {
+	parser := WorkflowDefinitionParser{}
+	definition, err := parser.ParseWorkflowDefinition(`
+  name: CI-CD
+  on:
+    push:
+  jobs:
+    run_tests:
+      runs-on: ubuntu-latest
+      strategy:
+        fail-fast: false
+        matrix:
+          python: [3.6]
+          exasol_version:
+            - 7.1.6
+      name: Run Tests (Python-${{ matrix.python }}, Exasol-${{ matrix.exasol_version }})
+`)
+	suite.NoError(err)
+	suite.Len(definition.JobsNames, 1)
+	suite.Contains(definition.JobsNames, "Run Tests (Python-3.600000, Exasol-7.1.6)")
+}
+
+func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowWithIntParameter() {
+	parser := WorkflowDefinitionParser{}
+	definition, err := parser.ParseWorkflowDefinition(`
+  name: CI-CD
+  on:
+    push:
+  jobs:
+    run_tests:
+      runs-on: ubuntu-latest
+      strategy:
+        fail-fast: false
+        matrix:
+          python: [3]
+          exasol_version:
+            - 7.1.6
+      name: Run Tests (Python-${{ matrix.python }}, Exasol-${{ matrix.exasol_version }})
+`)
+	suite.NoError(err)
+	suite.Len(definition.JobsNames, 1)
+	suite.Contains(definition.JobsNames, "Run Tests (Python-3, Exasol-7.1.6)")
+}
+
+func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowWithBoolParameter() {
+	parser := WorkflowDefinitionParser{}
+	definition, err := parser.ParseWorkflowDefinition(`
+  name: CI-CD
+  on:
+    push:
+  jobs:
+    run_tests:
+      runs-on: ubuntu-latest
+      strategy:
+        fail-fast: false
+        matrix:
+          success: [true]
+          exasol_version:
+            - 7.1.6
+      name: Run Tests (Success-${{ matrix.success }}, Exasol-${{ matrix.exasol_version }})
+`)
+	suite.NoError(err)
+	suite.Len(definition.JobsNames, 1)
+	suite.Contains(definition.JobsNames, "Run Tests (Success-true, Exasol-7.1.6)")
+}
