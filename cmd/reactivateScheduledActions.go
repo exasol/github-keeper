@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/go-github/v39/github"
+	"github.com/google/go-github/v43/github"
 	"github.com/spf13/cobra"
 )
 

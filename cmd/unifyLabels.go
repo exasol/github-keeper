@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/go-github/v39/github"
+	"github.com/google/go-github/v43/github"
 )
 
 func getLabelModifier(fix bool, repo string, githubClient *github.Client) LablesModifier {

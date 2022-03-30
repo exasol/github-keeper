@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/alyu/configparser v0.0.0-20191103060215-744e9a66e7bc
 	github.com/bketelsen/crypt v0.0.5 // indirect
-	github.com/google/go-github/v39 v39.2.0
+	github.com/google/go-github/v43 v43.0.0
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/smartystreets/goconvey v1.7.2 // indirect
 	github.com/spf13/cobra v1.4.0
