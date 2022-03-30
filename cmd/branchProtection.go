@@ -165,11 +165,9 @@ func (verifier BranchProtectionVerifier) createProtectionRequest(requireSonar bo
 	if err != nil {
 		panic(fmt.Sprintf("Failed to get required checks for repository %v. Cause: %v", verifier.repoName, err.Error()))
 	}
+
 	return github.ProtectionRequest{
-		RequiredStatusChecks: &github.RequiredStatusChecks{
-			Strict:   true,
-			Contexts: requiredChecks,
-		},
+		RequiredStatusChecks: createRequiredStatusChecks(requiredChecks),
 		RequiredPullRequestReviews: &github.PullRequestReviewsEnforcementRequest{
 			DismissStaleReviews:          true,
 			RequireCodeOwnerReviews:      true,
@@ -182,6 +180,17 @@ func (verifier BranchProtectionVerifier) createProtectionRequest(requireSonar bo
 			Apps:  []string{},
 		},
 		AllowForcePushes: &allowForcePushes,
+	}
+}
+
+func createRequiredStatusChecks(requiredChecks []string) *github.RequiredStatusChecks {
+	if len(requiredChecks) > 0 {
+		return &github.RequiredStatusChecks{
+			Strict:   true,
+			Contexts: requiredChecks,
+		}
+	} else {
+		return nil
 	}
 }
 
