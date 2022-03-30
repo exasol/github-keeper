@@ -80,8 +80,14 @@ func (verifier BranchProtectionVerifier) getRepo() *github.Repository {
 }
 
 func (verifier BranchProtectionVerifier) addExistingChecksToRequest(existingProtection *github.Protection, protectionRequest github.ProtectionRequest) {
-	if existingProtection == nil || existingProtection.RequiredStatusChecks == nil || existingProtection.RequiredStatusChecks.Contexts == nil {
+	if existingProtection == nil || existingProtection.RequiredStatusChecks == nil || existingProtection.RequiredStatusChecks.Contexts == nil || len(existingProtection.RequiredStatusChecks.Contexts) == 0 {
 		return
+	}
+	if protectionRequest.RequiredStatusChecks == nil {
+		protectionRequest.RequiredStatusChecks = &github.RequiredStatusChecks{
+			Strict:   true,
+			Contexts: []string{},
+		}
 	}
 	for _, existingCheck := range existingProtection.RequiredStatusChecks.Contexts {
 		if !verifier.containsValue(protectionRequest.RequiredStatusChecks.Contexts, existingCheck) {
