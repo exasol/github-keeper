@@ -34,6 +34,7 @@ func (suite RepoSettingsSuite) TestFix() {
 	suite.Assert().True(*repo.AllowAutoMerge)
 	suite.Assert().True(*repo.DeleteBranchOnMerge)
 	enabled, _, err := suite.githubClient.Repositories.GetVulnerabilityAlerts(context.Background(), suite.testOrg, suite.testRepo)
+	suite.NoError(err)
 	suite.Assert().True(enabled)
 }
 
