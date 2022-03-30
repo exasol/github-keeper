@@ -8,3 +8,4 @@ In release 0.1.1 GK now ignores workflow files that are not relevant for pull re
 
 * #45: Fixed validation errors for non-pullrequest workflow files
 * #48: Fixed parsing of matrix parameters of types int, float and boolean
+* #53: Fixed bug processing repos that do not require any branch protections
