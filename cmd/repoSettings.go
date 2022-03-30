@@ -27,7 +27,7 @@ type FixRepoProblemHandler struct {
 func (handler FixRepoProblemHandler) handleMissingSecurityAlerts() {
 	_, err := handler.githubClient.Repositories.EnableVulnerabilityAlerts(context.Background(), handler.org, handler.repo)
 	if err != nil {
-		fmt.Printf("Failed to enable security alerts for %v.\n", handler.repo)
+		panic(fmt.Sprintf("Failed to enable security alerts for %v. Cause: %v\n", handler.repo, err.Error()))
 	}
 }
 
