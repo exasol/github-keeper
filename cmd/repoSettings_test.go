@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"context"
-	"github.com/google/go-github/v39/github"
-	"github.com/stretchr/testify/suite"
 	"testing"
+
+	"github.com/google/go-github/v43/github"
+	"github.com/stretchr/testify/suite"
 )
 
 type RepoSettingsSuite struct {

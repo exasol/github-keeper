@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"bytes"
-	"github.com/google/go-github/v39/github"
-	"github.com/stretchr/testify/suite"
 	"io"
 	"log"
 	"os"
 	"sync"
+
+	"github.com/google/go-github/v43/github"
+	"github.com/stretchr/testify/suite"
 )
 
 type IntegrationTestSuite struct {
