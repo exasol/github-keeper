@@ -23,14 +23,15 @@ var configureRepoCmd = &cobra.Command{
 			panic(fmt.Sprintf("Could not read parameter secrets: %v", err.Error()))
 		}
 		secrets := ReadSecretsFromYaml(secretsFile)
-		for _, repo := range args {
-			fmt.Printf("\nhttps://github.com/exasol/%v\n", repo)
+		org := "exasol"
+		for index, repo := range args {
+			fmt.Printf("\nRepo %d of %d: https://github.com/%v/%v\n", index+1, len(args), org, repo)
 			branchProtectionVerifier := BranchProtectionVerifier{client: client, repoName: repo}
 			branchProtectionVerifier.CheckIfBranchProtectionIsApplied(fix)
 			UnifyLabels(repo, client, fix)
-			settingsVerifier := RepoSettingsVerifier{repo: repo, githubClient: client, org: "exasol"}
+			settingsVerifier := RepoSettingsVerifier{repo: repo, githubClient: client, org: org}
 			settingsVerifier.VerifyRepoSettings(fix)
-			webHookVerifier := WebHookVerifier{secrets: secrets, repo: repo, githubClient: client, org: "exasol"}
+			webHookVerifier := WebHookVerifier{secrets: secrets, repo: repo, githubClient: client, org: org}
 			webHookVerifier.VerifyWebHooks(fix)
 		}
 	},

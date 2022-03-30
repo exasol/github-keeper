@@ -80,8 +80,14 @@ func (verifier BranchProtectionVerifier) getRepo() *github.Repository {
 }
 
 func (verifier BranchProtectionVerifier) addExistingChecksToRequest(existingProtection *github.Protection, protectionRequest github.ProtectionRequest) {
-	if existingProtection == nil || existingProtection.RequiredStatusChecks == nil || existingProtection.RequiredStatusChecks.Contexts == nil {
+	if existingProtection == nil || existingProtection.RequiredStatusChecks == nil || existingProtection.RequiredStatusChecks.Contexts == nil || len(existingProtection.RequiredStatusChecks.Contexts) == 0 {
 		return
+	}
+	if protectionRequest.RequiredStatusChecks == nil {
+		protectionRequest.RequiredStatusChecks = &github.RequiredStatusChecks{
+			Strict:   true,
+			Contexts: []string{},
+		}
 	}
 	for _, existingCheck := range existingProtection.RequiredStatusChecks.Contexts {
 		if !verifier.containsValue(protectionRequest.RequiredStatusChecks.Contexts, existingCheck) {
@@ -165,11 +171,9 @@ func (verifier BranchProtectionVerifier) createProtectionRequest(requireSonar bo
 	if err != nil {
 		panic(fmt.Sprintf("Failed to get required checks for repository %v. Cause: %v", verifier.repoName, err.Error()))
 	}
+
 	return github.ProtectionRequest{
-		RequiredStatusChecks: &github.RequiredStatusChecks{
-			Strict:   true,
-			Contexts: requiredChecks,
-		},
+		RequiredStatusChecks: createRequiredStatusChecks(requiredChecks),
 		RequiredPullRequestReviews: &github.PullRequestReviewsEnforcementRequest{
 			DismissStaleReviews:          true,
 			RequireCodeOwnerReviews:      true,
@@ -182,6 +186,17 @@ func (verifier BranchProtectionVerifier) createProtectionRequest(requireSonar bo
 			Apps:  []string{},
 		},
 		AllowForcePushes: &allowForcePushes,
+	}
+}
+
+func createRequiredStatusChecks(requiredChecks []string) *github.RequiredStatusChecks {
+	if len(requiredChecks) > 0 {
+		return &github.RequiredStatusChecks{
+			Strict:   true,
+			Contexts: requiredChecks,
+		}
+	} else {
+		return nil
 	}
 }
 

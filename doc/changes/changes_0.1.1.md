@@ -15,3 +15,4 @@ generated branch protection rules, please use strings (`3.75`) as parameters.
 
 * #45: Fixed validation errors for non-pullrequest workflow files
 * #48: Fixed parsing of matrix parameters of types int, float and boolean
+* #53: Fixed bug processing repos that do not require any branch protections
