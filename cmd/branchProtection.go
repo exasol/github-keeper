@@ -52,7 +52,7 @@ func (verifier BranchProtectionVerifier) CheckIfBranchProtectionIsApplied(fix bo
 	repo := verifier.getRepo()
 	branch := *repo.DefaultBranch
 	existingProtection, resp, _ := verifier.client.Repositories.GetBranchProtection(context.Background(), "exasol", verifier.repoName, branch)
-	protectionRequest := verifier.createProtectionRequest(verifier.isSonarRequired(repo.Language))
+	protectionRequest := verifier.createProtectionRequest(verifier.isSonarRequired(repo.Language), branch)
 	if resp.StatusCode == 404 {
 		problemHandler.createBranchProtection(verifier.repoName, branch, &protectionRequest)
 	} else {
@@ -165,9 +165,9 @@ func (verifier BranchProtectionVerifier) getProblemHandler(fix bool) BranchProte
 	return problemHandler
 }
 
-func (verifier BranchProtectionVerifier) createProtectionRequest(requireSonar bool) github.ProtectionRequest {
+func (verifier BranchProtectionVerifier) createProtectionRequest(requireSonar bool, defaultBranch string) github.ProtectionRequest {
 	allowForcePushes := false
-	requiredChecks, err := verifier.getRequiredChecks(requireSonar)
+	requiredChecks, err := verifier.getRequiredChecks(requireSonar, defaultBranch)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to get required checks for repository %v. Cause: %v", verifier.repoName, err.Error()))
 	}
@@ -200,7 +200,7 @@ func createRequiredStatusChecks(requiredChecks []string) *github.RequiredStatusC
 	}
 }
 
-func (verifier BranchProtectionVerifier) getRequiredChecks(requireSonar bool) ([]string, error) {
+func (verifier BranchProtectionVerifier) getRequiredChecks(requireSonar bool, defaultBranch string) ([]string, error) {
 	result := []string{}
 	_, directory, _, err := verifier.client.Repositories.GetContents(context.Background(), "exasol", verifier.repoName, ".github/workflows/", &github.RepositoryContentGetOptions{})
 	if err != nil {
@@ -216,7 +216,7 @@ func (verifier BranchProtectionVerifier) getRequiredChecks(requireSonar bool) ([
 		if *fileDesc.Type == "dir" {
 			continue
 		}
-		requiredChecksForWorkflow, err := verifier.getChecksForWorkflow(workflowFilePath)
+		requiredChecksForWorkflow, err := verifier.getChecksForWorkflow(workflowFilePath, defaultBranch)
 		if err != nil {
 			return nil, err
 		}
@@ -232,34 +232,60 @@ func (verifier BranchProtectionVerifier) getRequiredChecks(requireSonar bool) ([
 	return result, nil
 }
 
-func (verifier BranchProtectionVerifier) getChecksForWorkflow(workflowFilePath *string) ([]string, error) {
+func (verifier BranchProtectionVerifier) getChecksForWorkflow(workflowFilePath *string, defaultBranch string) ([]string, error) {
 	content, err := verifier.downloadFile(*workflowFilePath)
 	if err != nil {
 		return nil, err
 	}
-	return verifier.getChecksForWorkflowContent(content, workflowFilePath), nil
+	return verifier.getChecksForWorkflowContent(content, workflowFilePath, defaultBranch), nil
 }
 
-func (verifier BranchProtectionVerifier) getChecksForWorkflowContent(content string, fileName *string) []string {
+func (verifier BranchProtectionVerifier) getChecksForWorkflowContent(content string, fileName *string, defaultBranch string) []string {
 	fileUrl := fmt.Sprintf("https://github.com/exasol/%s/blob/%s/%s", verifier.repoName, verifier.getRepo().GetDefaultBranch(), *fileName)
 	workflow, err := WorkflowDefinitionParser{}.ParseWorkflowDefinition(content)
 	if err != nil {
-		switch err := err.(type) {
-		case ValidationError:
-			fmt.Printf("%vValidation Error for '%v': %v %v\n", consoleColorRed, fileUrl, err.Error(), consoleColorReset)
-			os.Exit(1)
-		default:
-			fmt.Printf("%vWarning: Failed to parse workflow definition '%v'. Probably you use some advanced matrix build features there. Github-keeper will not add the checks from this workflow to the branch protection. Please add them manually. %v\n", consoleColorYellow, fileUrl, consoleColorReset)
-			var emptyResult []string
-			return emptyResult
+		handleParseError(err, fileUrl)
+		return nil
+	}
+	hasWorkflowPushOrPrTrigger := checkIfProtectionNeeded(workflow.Trigger, defaultBranch)
+	if hasWorkflowPushOrPrTrigger {
+		jobNames, err := workflow.GetJobNames()
+		if err != nil {
+			handleParseError(err, fileUrl)
+			return nil
+		} else {
+			return jobNames
 		}
 	}
-	hasWorkflowPushOrPrTrigger := hasWorkflowPushOrPrTrigger(workflow.Trigger)
-	if hasWorkflowPushOrPrTrigger {
-		return workflow.JobsNames
+	return nil
+}
+
+func handleParseError(err error, fileUrl string) {
+	switch err := err.(type) {
+	case ValidationError:
+		fmt.Printf("%vValidation Error for '%v': %v %v\n", consoleColorRed, fileUrl, err.Error(), consoleColorReset)
+		os.Exit(1)
+	default:
+		printParseFailedWarning(fileUrl)
+		return
 	}
-	var emptyResult []string
-	return emptyResult
+	return
+}
+
+func printParseFailedWarning(fileUrl string) {
+	fmt.Printf("%vWarning: Failed to parse workflow definition '%v'. Probably you use some advanced matrix build features there. Github-keeper will not add the checks from this workflow to the branch protection. Please add them manually. %v\n", consoleColorYellow, fileUrl, consoleColorReset)
+}
+
+func checkIfProtectionNeeded(triggers *TriggerDefinition, defaultBranch string) bool {
+	if triggers.TriggerOnPr || triggers.TriggerOnPushToAnyBranch {
+		return true
+	}
+	for _, branch := range triggers.TriggerOnPushToBranches {
+		if branch == defaultBranch {
+			return true
+		}
+	}
+	return false
 }
 
 func (verifier BranchProtectionVerifier) downloadFile(path string) (string, error) {
@@ -268,10 +294,4 @@ func (verifier BranchProtectionVerifier) downloadFile(path string) (string, erro
 		return "", err
 	}
 	return workflowFile.GetContent()
-}
-
-type workflowDefinition struct {
-	Name      string
-	Trigger   []string
-	JobsNames []string
 }

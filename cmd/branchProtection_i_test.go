@@ -143,7 +143,7 @@ jobs:
       matrix:
         test-path: ${{fromJson(needs.prep-testbed.outputs.matrix)}}
     runs-on: ubuntu-latest
-`, &fileName)
+`, &fileName, "main")
 	})
 	suite.Contains(output, "\x1b[33mWarning:")
 }
@@ -166,7 +166,7 @@ jobs:
          - id: 2
            num: 20
     runs-on: ubuntu-latest
-`, &fileName)
+`, &fileName, "main")
 	} else {
 		cmd := exec.Command(os.Args[0], "-test.run=TestBranchProtectionSuite/TestGetChecksForWorkflowContentWithValidationError")
 		cmd.Env = append(os.Environ(), "RUN_TEST=1")
