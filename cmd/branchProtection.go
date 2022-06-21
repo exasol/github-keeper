@@ -269,7 +269,6 @@ func handleParseError(err error, fileUrl string) {
 		printParseFailedWarning(fileUrl)
 		return
 	}
-	return
 }
 
 func printParseFailedWarning(fileUrl string) {
