@@ -160,7 +160,7 @@ func getTriggersOfWorkflowDefinition(parsedYaml *workflowDefinitionInt) (*Trigge
 	} else if triggersFromMap := tryReadingTriggersFromMap(parsedYaml.On); triggersFromMap != nil {
 		return triggersFromMap, nil
 	} else {
-		return nil, fmt.Errorf("the GitHub workflow '%v' has a unimplemented trigger definition style", parsedYaml.Name)
+		return nil, fmt.Errorf("the GitHub workflow '%v'uses an unsupported trigger definition style", parsedYaml.Name)
 	}
 }
 

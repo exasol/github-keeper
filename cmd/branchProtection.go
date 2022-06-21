@@ -50,11 +50,11 @@ func (handler FixBranchProtectionProblemHandler) updateProtection(repo string, b
 func (verifier BranchProtectionVerifier) CheckIfBranchProtectionIsApplied(fix bool) {
 	problemHandler := verifier.getProblemHandler(fix)
 	repo := verifier.getRepo()
-	branch := *repo.DefaultBranch
-	existingProtection, resp, _ := verifier.client.Repositories.GetBranchProtection(context.Background(), "exasol", verifier.repoName, branch)
+	defaultBranch := *repo.DefaultBranch
+	existingProtection, resp, _ := verifier.client.Repositories.GetBranchProtection(context.Background(), "exasol", verifier.repoName, defaultBranch)
 	protectionRequest := verifier.createProtectionRequest(verifier.isSonarRequired(repo.Language))
 	if resp.StatusCode == 404 {
-		problemHandler.createBranchProtection(verifier.repoName, branch, &protectionRequest)
+		problemHandler.createBranchProtection(verifier.repoName, defaultBranch, &protectionRequest)
 	} else {
 		if !(existingProtection.AllowForcePushes.Enabled == *protectionRequest.AllowForcePushes &&
 			existingProtection.EnforceAdmins.Enabled == protectionRequest.EnforceAdmins &&
@@ -62,7 +62,7 @@ func (verifier BranchProtectionVerifier) CheckIfBranchProtectionIsApplied(fix bo
 			verifier.checkIfStatusCheckPolicyIsApplied(existingProtection.RequiredStatusChecks, protectionRequest.RequiredStatusChecks) &&
 			verifier.checkIfBranchRestrictionsAreApplied(existingProtection.Restrictions, protectionRequest.Restrictions)) {
 			verifier.addExistingChecksToRequest(existingProtection, protectionRequest)
-			problemHandler.updateProtection(verifier.repoName, branch, &protectionRequest)
+			problemHandler.updateProtection(verifier.repoName, defaultBranch, &protectionRequest)
 		}
 	}
 }
