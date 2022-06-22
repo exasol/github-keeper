@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -15,22 +14,6 @@ func TestWorkflowDefinitionParserSuite(t *testing.T) {
 	suite.Run(t, new(WorkflowDefinitionParserSuite))
 }
 
-func (suite *WorkflowDefinitionParserSuite) TestHasWorkflowPushOrPrTrigger() {
-	cases := []TestHasWorkflowPushOrPrTriggerCase{
-		{trigger: []string{""}, expectedResult: false},
-		{trigger: []string{"other"}, expectedResult: false},
-		{trigger: []string{"push"}, expectedResult: true},
-		{trigger: []string{"pull_request"}, expectedResult: true},
-		{trigger: []string{"other", "push"}, expectedResult: true},
-	}
-	for _, testCase := range cases {
-		suite.Run(fmt.Sprintf("trigger: %v", testCase.trigger), func() {
-			result := hasWorkflowPushOrPrTrigger(testCase.trigger)
-			suite.Equal(testCase.expectedResult, result)
-		})
-	}
-}
-
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithListSyntax() {
 	parser := WorkflowDefinitionParser{}
 	definition, err := parser.ParseWorkflowDefinition(`
@@ -42,10 +25,45 @@ jobs:
     runs-on: ubuntu-latest
 `)
 	suite.NoError(err)
-	suite.Len(definition.JobsNames, 1)
-	suite.Contains(definition.JobsNames, "build")
-	suite.Contains(definition.Trigger, "push")
+	jobNames, err := definition.GetJobNames()
+	suite.NoError(err)
+	suite.Len(jobNames, 1)
+	suite.Contains(jobNames, "build")
+	suite.Equal(true, definition.Trigger.TriggerOnPushToAnyBranch)
 	suite.Contains(definition.Name, "CI Build")
+}
+
+func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithMapSyntaxAndSpecificBranch() {
+	parser := WorkflowDefinitionParser{}
+	definition, err := parser.ParseWorkflowDefinition(`
+name: CI Build
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+`)
+	suite.NoError(err)
+	suite.Equal(false, definition.Trigger.TriggerOnPushToAnyBranch)
+	suite.Equal(false, definition.Trigger.TriggerOnPr)
+	suite.Contains(definition.Trigger.TriggerOnPushToBranches, "main")
+}
+
+func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithPrTriggerAndMapSyntax() {
+	parser := WorkflowDefinitionParser{}
+	definition, err := parser.ParseWorkflowDefinition(`
+name: CI Build
+on:
+  pull_request:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+`)
+	suite.NoError(err)
+	suite.Equal(false, definition.Trigger.TriggerOnPushToAnyBranch)
+	suite.Equal(true, definition.Trigger.TriggerOnPr)
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithMapSyntax() {
@@ -59,10 +77,28 @@ jobs:
     runs-on: ubuntu-latest
 `)
 	suite.NoError(err)
-	suite.Len(definition.JobsNames, 1)
-	suite.Contains(definition.JobsNames, "build")
-	suite.Contains(definition.Trigger, "push")
+	jobNames, err := definition.GetJobNames()
+	suite.NoError(err)
+	suite.Len(jobNames, 1)
+	suite.Contains(jobNames, "build")
+	suite.Equal(true, definition.Trigger.TriggerOnPushToAnyBranch)
 	suite.Contains(definition.Name, "CI Build")
+}
+
+func (suite *WorkflowDefinitionParserSuite) TestParseTriggerWithSchedule() {
+	parser := WorkflowDefinitionParser{}
+	definition, err := parser.ParseWorkflowDefinition(`
+name: CI Build
+on:
+  schedule:
+    - cron: "0 5 * * *"
+  push:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+`)
+	suite.NoError(err)
+	suite.Equal(true, definition.Trigger.TriggerOnPushToAnyBranch)
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithJobName() {
@@ -77,8 +113,10 @@ jobs:
     runs-on: ubuntu-latest
 `)
 	suite.NoError(err)
-	suite.Len(definition.JobsNames, 1)
-	suite.Contains(definition.JobsNames, "My-Job")
+	jobNames, err := definition.GetJobNames()
+	suite.NoError(err)
+	suite.Len(jobNames, 1)
+	suite.Contains(jobNames, "My-Job")
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithMatrixBuild() {
@@ -97,11 +135,13 @@ jobs:
     runs-on: ubuntu-latest
 `)
 	suite.NoError(err)
-	suite.Len(definition.JobsNames, 4)
-	suite.Contains(definition.JobsNames, "Build with A 1 and B 3")
-	suite.Contains(definition.JobsNames, "Build with A 1 and B 4")
-	suite.Contains(definition.JobsNames, "Build with A 2 and B 3")
-	suite.Contains(definition.JobsNames, "Build with A 2 and B 4")
+	jobNames, err := definition.GetJobNames()
+	suite.NoError(err)
+	suite.Len(jobNames, 4)
+	suite.Contains(jobNames, "Build with A 1 and B 3")
+	suite.Contains(jobNames, "Build with A 1 and B 4")
+	suite.Contains(jobNames, "Build with A 2 and B 3")
+	suite.Contains(jobNames, "Build with A 2 and B 4")
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithMatrixBuildWithMultiplesParameters() {
@@ -124,9 +164,11 @@ jobs:
     runs-on: ubuntu-latest
 `)
 	suite.NoError(err)
-	suite.Len(definition.JobsNames, 2)
-	suite.Contains(definition.JobsNames, "Build with id 1, num 10 and B 3")
-	suite.Contains(definition.JobsNames, "Build with id 2, num 20 and B 3")
+	jobNames, err := definition.GetJobNames()
+	suite.NoError(err)
+	suite.Len(jobNames, 2)
+	suite.Contains(jobNames, "Build with id 1, num 10 and B 3")
+	suite.Contains(jobNames, "Build with id 2, num 20 and B 3")
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithMatrixBuildWithConfigSyntax() {
@@ -146,14 +188,16 @@ jobs:
     runs-on: ubuntu-latest
 `)
 	suite.NoError(err)
-	suite.Len(definition.JobsNames, 2)
-	suite.Contains(definition.JobsNames, "Build with A 10 and B 3")
-	suite.Contains(definition.JobsNames, "Build with A 20 and B 3")
+	jobNames, err := definition.GetJobNames()
+	suite.NoError(err)
+	suite.Len(jobNames, 2)
+	suite.Contains(jobNames, "Build with A 10 and B 3")
+	suite.Contains(jobNames, "Build with A 20 and B 3")
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithMultiDimensionMatrixBuildAndNoName() {
 	parser := WorkflowDefinitionParser{}
-	_, err := parser.ParseWorkflowDefinition(`
+	definition, err := parser.ParseWorkflowDefinition(`
 name: CI Build
 on:
   push:
@@ -165,12 +209,14 @@ jobs:
         b: [ "3" ]
     runs-on: ubuntu-latest
 `)
+	suite.NoError(err)
+	_, err = definition.GetJobNames()
 	suite.Equal("multi dimensional matrix github-action jobs with no explicit name are not supported. Please add a name field to the job that combines the matrix parameters into a more readable name. For example \"Build with Go ${{matrix.go}} and Exasol ${{ matrix.db }}\"", err.Error())
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithMatrixBuildWithMultiplesParametersAndNoName() {
 	parser := WorkflowDefinitionParser{}
-	_, err := parser.ParseWorkflowDefinition(`
+	definition, err := parser.ParseWorkflowDefinition(`
 name: CI Build
 on:
   push:
@@ -185,6 +231,8 @@ jobs:
            num: 20
     runs-on: ubuntu-latest
 `)
+	suite.NoError(err)
+	_, err = definition.GetJobNames()
 	suite.Equal("matrix github-action jobs with object parameters and no job name are not supported. Please add a name field to the job that combines the matrix parameters into a more readable name. For example \"Build with Go ${{matrix.go}} and Exasol ${{ matrix.db }}\"", err.Error())
 }
 
@@ -222,9 +270,11 @@ jobs:
     runs-on: ubuntu-latest
 `)
 	suite.NoError(err)
-	suite.Len(definition.JobsNames, 2)
-	suite.Contains(definition.JobsNames, "build (1)")
-	suite.Contains(definition.JobsNames, "build (2)")
+	jobNames, err := definition.GetJobNames()
+	suite.NoError(err)
+	suite.Len(jobNames, 2)
+	suite.Contains(jobNames, "build (1)")
+	suite.Contains(jobNames, "build (2)")
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithMatrixBuildAndFloatValue() {
@@ -241,9 +291,11 @@ jobs:
     runs-on: ubuntu-latest
 `)
 	suite.NoError(err)
-	suite.Len(definition.JobsNames, 2)
-	suite.Contains(definition.JobsNames, "build (1.2)")
-	suite.Contains(definition.JobsNames, "build (2.1)")
+	jobNames, err := definition.GetJobNames()
+	suite.NoError(err)
+	suite.Len(jobNames, 2)
+	suite.Contains(jobNames, "build (1.2)")
+	suite.Contains(jobNames, "build (2.1)")
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithMatrixNotAllVariablesUsed() {
@@ -274,10 +326,12 @@ jobs:
     name: "Build with Python ${{ matrix.python-version }} and Exasol ${{ matrix.exasol-tag }}"
 `)
 	suite.NoError(err)
-	suite.Len(definition.JobsNames, 3)
-	suite.Contains(definition.JobsNames, "Build with Python 3.9 and Exasol latest-7.1")
-	suite.Contains(definition.JobsNames, "Build with Python 3.95 and Exasol latest-7.0")
-	suite.Contains(definition.JobsNames, "Build with Python 3.6 and Exasol latest-6.2")
+	jobNames, err := definition.GetJobNames()
+	suite.NoError(err)
+	suite.Len(jobNames, 3)
+	suite.Contains(jobNames, "Build with Python 3.9 and Exasol latest-7.1")
+	suite.Contains(jobNames, "Build with Python 3.95 and Exasol latest-7.0")
+	suite.Contains(jobNames, "Build with Python 3.6 and Exasol latest-6.2")
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowContentWithSingleItemMatrix() {
@@ -299,8 +353,10 @@ jobs:
     name: "Build SSL-Cert with Python ${{ matrix.python-version }} and Exasol ${{ matrix.exasol-tag }}"
 `)
 	suite.NoError(err)
-	suite.Len(definition.JobsNames, 1)
-	suite.Contains(definition.JobsNames, "Build SSL-Cert with Python 3.9 and Exasol 7.1.6")
+	jobNames, err := definition.GetJobNames()
+	suite.NoError(err)
+	suite.Len(jobNames, 1)
+	suite.Contains(jobNames, "Build SSL-Cert with Python 3.9 and Exasol 7.1.6")
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowForUnsupportedSyntax() {
@@ -337,10 +393,12 @@ func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowWithFloatPar
       name: Run Tests (Python-${{ matrix.python }}, Exasol-${{ matrix.exasol_version }})
 `)
 	suite.NoError(err)
-	suite.Len(definition.JobsNames, 3)
-	suite.Contains(definition.JobsNames, "Run Tests (Python-3.6, Exasol-7.1.6)")
-	suite.Contains(definition.JobsNames, "Run Tests (Python-3.7, Exasol-7.1.6)")
-	suite.Contains(definition.JobsNames, "Run Tests (Python-3.9, Exasol-7.1.6)")
+	jobNames, err := definition.GetJobNames()
+	suite.NoError(err)
+	suite.Len(jobNames, 3)
+	suite.Contains(jobNames, "Run Tests (Python-3.6, Exasol-7.1.6)")
+	suite.Contains(jobNames, "Run Tests (Python-3.7, Exasol-7.1.6)")
+	suite.Contains(jobNames, "Run Tests (Python-3.9, Exasol-7.1.6)")
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowWithIntParameter() {
@@ -361,8 +419,10 @@ func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowWithIntParam
       name: Run Tests (Python-${{ matrix.python }}, Exasol-${{ matrix.exasol_version }})
 `)
 	suite.NoError(err)
-	suite.Len(definition.JobsNames, 1)
-	suite.Contains(definition.JobsNames, "Run Tests (Python-3, Exasol-7.1.6)")
+	jobNames, err := definition.GetJobNames()
+	suite.NoError(err)
+	suite.Len(jobNames, 1)
+	suite.Contains(jobNames, "Run Tests (Python-3, Exasol-7.1.6)")
 }
 
 func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowWithBoolParameter() {
@@ -383,6 +443,8 @@ func (suite *WorkflowDefinitionParserSuite) TestGetChecksForWorkflowWithBoolPara
       name: Run Tests (Success-${{ matrix.success }}, Exasol-${{ matrix.exasol_version }})
 `)
 	suite.NoError(err)
-	suite.Len(definition.JobsNames, 1)
-	suite.Contains(definition.JobsNames, "Run Tests (Success-true, Exasol-7.1.6)")
+	jobNames, err := definition.GetJobNames()
+	suite.NoError(err)
+	suite.Len(jobNames, 1)
+	suite.Contains(jobNames, "Run Tests (Success-true, Exasol-7.1.6)")
 }

@@ -107,11 +107,6 @@ func (suite *BranchProtectionSuite) cleanup() {
 	}
 }
 
-type TestHasWorkflowPushOrPrTriggerCase struct {
-	trigger        []string
-	expectedResult bool
-}
-
 func (suite *BranchProtectionSuite) TestCheckIfBranchRestrictionsAreAppliedWithEqualInputs() {
 	verifier := BranchProtectionVerifier{}
 	testUserName := "testUser"

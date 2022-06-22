@@ -50,11 +50,11 @@ func (handler FixBranchProtectionProblemHandler) updateProtection(repo string, b
 func (verifier BranchProtectionVerifier) CheckIfBranchProtectionIsApplied(fix bool) {
 	problemHandler := verifier.getProblemHandler(fix)
 	repo := verifier.getRepo()
-	branch := *repo.DefaultBranch
-	existingProtection, resp, _ := verifier.client.Repositories.GetBranchProtection(context.Background(), "exasol", verifier.repoName, branch)
+	defaultBranch := *repo.DefaultBranch
+	existingProtection, resp, _ := verifier.client.Repositories.GetBranchProtection(context.Background(), "exasol", verifier.repoName, defaultBranch)
 	protectionRequest := verifier.createProtectionRequest(verifier.isSonarRequired(repo.Language))
 	if resp.StatusCode == 404 {
-		problemHandler.createBranchProtection(verifier.repoName, branch, &protectionRequest)
+		problemHandler.createBranchProtection(verifier.repoName, defaultBranch, &protectionRequest)
 	} else {
 		if !(existingProtection.AllowForcePushes.Enabled == *protectionRequest.AllowForcePushes &&
 			existingProtection.EnforceAdmins.Enabled == protectionRequest.EnforceAdmins &&
@@ -62,7 +62,7 @@ func (verifier BranchProtectionVerifier) CheckIfBranchProtectionIsApplied(fix bo
 			verifier.checkIfStatusCheckPolicyIsApplied(existingProtection.RequiredStatusChecks, protectionRequest.RequiredStatusChecks) &&
 			verifier.checkIfBranchRestrictionsAreApplied(existingProtection.Restrictions, protectionRequest.Restrictions)) {
 			verifier.addExistingChecksToRequest(existingProtection, protectionRequest)
-			problemHandler.updateProtection(verifier.repoName, branch, &protectionRequest)
+			problemHandler.updateProtection(verifier.repoName, defaultBranch, &protectionRequest)
 		}
 	}
 }
@@ -244,22 +244,39 @@ func (verifier BranchProtectionVerifier) getChecksForWorkflowContent(content str
 	fileUrl := fmt.Sprintf("https://github.com/exasol/%s/blob/%s/%s", verifier.repoName, verifier.getRepo().GetDefaultBranch(), *fileName)
 	workflow, err := WorkflowDefinitionParser{}.ParseWorkflowDefinition(content)
 	if err != nil {
-		switch err := err.(type) {
-		case ValidationError:
-			fmt.Printf("%vValidation Error for '%v': %v %v\n", consoleColorRed, fileUrl, err.Error(), consoleColorReset)
-			os.Exit(1)
-		default:
-			fmt.Printf("%vWarning: Failed to parse workflow definition '%v'. Probably you use some advanced matrix build features there. Github-keeper will not add the checks from this workflow to the branch protection. Please add them manually. %v\n", consoleColorYellow, fileUrl, consoleColorReset)
-			var emptyResult []string
-			return emptyResult
+		handleParseError(err, fileUrl)
+		return nil
+	}
+	hasWorkflowPushOrPrTrigger := checkIfProtectionNeeded(workflow.Trigger)
+	if hasWorkflowPushOrPrTrigger {
+		jobNames, err := workflow.GetJobNames()
+		if err != nil {
+			handleParseError(err, fileUrl)
+			return nil
+		} else {
+			return jobNames
 		}
 	}
-	hasWorkflowPushOrPrTrigger := hasWorkflowPushOrPrTrigger(workflow.Trigger)
-	if hasWorkflowPushOrPrTrigger {
-		return workflow.JobsNames
+	return nil
+}
+
+func handleParseError(err error, fileUrl string) {
+	switch err := err.(type) {
+	case ValidationError:
+		fmt.Printf("%vValidation Error for '%v': %v %v\n", consoleColorRed, fileUrl, err.Error(), consoleColorReset)
+		os.Exit(1)
+	default:
+		printParseFailedWarning(fileUrl)
+		return
 	}
-	var emptyResult []string
-	return emptyResult
+}
+
+func printParseFailedWarning(fileUrl string) {
+	fmt.Printf("%vWarning: Failed to parse workflow definition '%v'. Probably you use some advanced matrix build features there. Github-keeper will not add the checks from this workflow to the branch protection. Please add them manually. %v\n", consoleColorYellow, fileUrl, consoleColorReset)
+}
+
+func checkIfProtectionNeeded(triggers *TriggerDefinition) bool {
+	return triggers.TriggerOnPr || triggers.TriggerOnPushToAnyBranch
 }
 
 func (verifier BranchProtectionVerifier) downloadFile(path string) (string, error) {
@@ -268,10 +285,4 @@ func (verifier BranchProtectionVerifier) downloadFile(path string) (string, erro
 		return "", err
 	}
 	return workflowFile.GetContent()
-}
-
-type workflowDefinition struct {
-	Name      string
-	Trigger   []string
-	JobsNames []string
 }
