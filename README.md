@@ -2,7 +2,7 @@
 
 GitHub keeper is a CLI tool that helps to unify our repositories.
 
-[![CI Build](https://github.com/exasol/github-keeper/actions/workflows/ci-build.yml/badge.svg)](https://github.com/exasol/github-keeper/actions/workflows/ci-build.yml)
+[![Build Status](https://github.com/exasol/github-keeper/actions/workflows/ci-build.yml/badge.svg)](https://github.com/exasol/github-keeper/actions/workflows/ci-build.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=com.exasol%3Agithub-keeper&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=com.exasol%3Agithub-keeper)
 
 Features:
@@ -80,3 +80,4 @@ gh repo list exasol --limit 500 --json name,repositoryTopics --jq '.[] | select(
 ## Additional Information
 
 * [Changelog](doc/changes/changelog.md)
+* [Dependencies](dependencies.md)
