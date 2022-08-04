@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  project-keeper-verify:
     runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
