@@ -58,7 +58,7 @@ func (suite *UnifyLabelsSuite) TestMigrateLabel() {
 	issueName := "TestIssue"
 	issue, _, err := githubClient.Issues.Create(context.Background(), suite.testOrg, suite.testRepo, &github.IssueRequest{Title: &issueName, Labels: &[]string{blockedLabel}})
 	suite.NoError(err)
-	suite.runUnifyLabelCommand(true) 
+	suite.runUnifyLabelCommand(true)
 	updatedIssue, _, err := githubClient.Issues.Get(context.Background(), suite.testOrg, suite.testRepo, *issue.Number)
 	suite.NoError(err)
 	var labelNames []string
