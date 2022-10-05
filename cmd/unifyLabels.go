@@ -25,14 +25,9 @@ func UnifyLabels(repo string, githubClient *github.Client, fix bool) {
 		{"invalid", "eeeeee", []string{}, true},
 		{"question", "cc3377", []string{"help wanted"}, true},
 		{"ci", "cc3377", []string{}, false},
-		{"source:exasol", "eeeeee", []string{}, true},
-		{"source:external", "eeeeee", []string{}, true},
 		{"decision:wont-fix", "ffffff", []string{"wontfix", "won't fix", "status:wont-fix"}, true},
 		{"shelved:yes", "ff33cc", []string{}, true},
 		{"timeline:long-term", "555555", []string{"long-term", "timeline:longterm", "timelien:long-term"}, true},
-		{"complexity:low", "4FC24F", []string{"good-first-issue"}, true},
-		{"complexity:medium", "F2BF63", []string{}, true},
-		{"complexity:high", "F26363", []string{}, true},
 		{"dependencies", "ffbb11", []string{}, false},
 		{"security", "ee0000", []string{}, false}, //check if we can configure
 		{"blocked:yes", "000000", []string{"blocked", "status:blocked"}, true}}
