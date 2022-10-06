@@ -32,8 +32,11 @@ func readGithubTokenFromConfig() string {
 	if err != nil {
 		panic(err)
 	}
-	oauthToken, err := config.StringValue("global", "github_oauth_access_token")
-	if err != nil {
+	key := "github_oauth_access_token"
+	oauthToken, err := config.StringValue("global", key)
+	if err == nil {
+		fmt.Printf("Using %v from file %v.\n", key, configFile)
+	} else {
 		panic(fmt.Sprintf("The config file (%v) did not contain the required 'github_oauth_access_token' value.", configFile))
 	}
 	return oauthToken
