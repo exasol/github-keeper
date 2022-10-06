@@ -30,7 +30,7 @@ GitHub keeper is a CLI tool that helps to unify our repositories.
 
 ## Configuration
 
-Please create configuration file `~/.github-keeper/secrets.yml` with the following content:
+Please create the configuration file `~/.github-keeper/secrets.yml` with the following content:
 
 ```yaml
 issuesSlackWebhookUrl: "<slack web-hook url for issue updates>"
