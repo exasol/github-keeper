@@ -16,7 +16,7 @@ func TestUnifyLabelsSuite(t *testing.T) {
 	suite.Run(t, new(UnifyLabelsSuite))
 }
 
-func (suite *UnifyLabelsSuite) TestCreateLables() {
+func (suite *UnifyLabelsSuite) TestCreateLabels() {
 	suite.cleanup()       // to be sure we start with a defined state
 	defer suite.cleanup() // to leave a clean repo
 	suite.runUnifyLabelCommand(true)
