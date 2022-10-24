@@ -11,6 +11,10 @@ generated branch protection rules, please use strings (`3.75`) as parameters.
 
 * #50: Added validation for enable dependabot and security alerts
 
+## Refactoring:
+
+* #65: Added project keeper
+
 ## Bug Fixes:
 
 * #45: Fixed validation errors for non-pullrequest workflow files
