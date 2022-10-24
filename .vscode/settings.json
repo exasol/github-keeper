@@ -1,0 +1,9 @@
+{
+    "go.testTimeout": "240s",
+    "go.lintOnSave": "workspace",
+    "go.lintTool": "golangci-lint",
+    "sonarlint.connectedMode.project": {
+        "connectionId": "exasol",
+        "projectKey": "com.exasol:github-keeper"
+    }
+}

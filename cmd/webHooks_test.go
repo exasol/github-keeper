@@ -27,23 +27,23 @@ func (suite *WebHooksSuite) SetupSuite() {
 	suite.deleteAllHooks()
 }
 
-func (suite WebHooksSuite) TearDownTest() {
+func (suite *WebHooksSuite) TearDownTest() {
 	suite.deleteAllHooks()
 }
 
-func (suite WebHooksSuite) TestMissingWebhookMessage() {
+func (suite *WebHooksSuite) TestMissingWebhookMessage() {
 	output := suite.CaptureOutput(func() {
 		suite.verifier.VerifyWebHooks(false)
 	})
 	suite.Assert().Equal(output, "Missing required web hook 'Issues on Slack' for repository testing-release-robot.\n")
 }
 
-func (suite WebHooksSuite) TestCreateWebhook() {
+func (suite *WebHooksSuite) TestCreateWebhook() {
 	suite.verifier.VerifyWebHooks(true)
 	suite.assertWebhook()
 }
 
-func (suite WebHooksSuite) TestIncorrectWebhook() {
+func (suite *WebHooksSuite) TestIncorrectWebhook() {
 	suite.createIncorrectWebhook()
 	output := suite.CaptureOutput(func() {
 		suite.verifier.VerifyWebHooks(false)
@@ -51,13 +51,13 @@ func (suite WebHooksSuite) TestIncorrectWebhook() {
 	suite.Assert().Equal("Outdated web hook 'Issues on Slack' for repository testing-release-robot.\n", output)
 }
 
-func (suite WebHooksSuite) TestUpdateWebhook() {
+func (suite *WebHooksSuite) TestUpdateWebhook() {
 	suite.createIncorrectWebhook()
 	suite.verifier.VerifyWebHooks(true)
 	suite.assertWebhook()
 }
 
-func (suite WebHooksSuite) createIncorrectWebhook() {
+func (suite *WebHooksSuite) createIncorrectWebhook() {
 	active := false
 	name := "Issues on Slack"
 	hook := github.Hook{
@@ -73,7 +73,7 @@ func (suite WebHooksSuite) createIncorrectWebhook() {
 	suite.NoError(err)
 }
 
-func (suite WebHooksSuite) assertWebhook() {
+func (suite *WebHooksSuite) assertWebhook() {
 	hooks, _, err := suite.githubClient.Repositories.ListHooks(context.Background(), suite.testOrg, suite.testRepo, &github.ListOptions{PerPage: 100})
 	suite.NoError(err)
 	hook := suite.findTestWebhook(hooks)
@@ -86,7 +86,7 @@ func (suite WebHooksSuite) assertWebhook() {
 	suite.Assert().Equal("form", hook.Config["content_type"])
 }
 
-func (suite WebHooksSuite) findTestWebhook(hooks []*github.Hook) *github.Hook {
+func (suite *WebHooksSuite) findTestWebhook(hooks []*github.Hook) *github.Hook {
 	for _, hook := range hooks {
 		if hook.Config["url"].(string) == suite.testWebhookUrl {
 			return hook
@@ -95,7 +95,7 @@ func (suite WebHooksSuite) findTestWebhook(hooks []*github.Hook) *github.Hook {
 	return nil
 }
 
-func (suite WebHooksSuite) deleteAllHooks() {
+func (suite *WebHooksSuite) deleteAllHooks() {
 	hooks, _, err := suite.githubClient.Repositories.ListHooks(context.Background(), suite.testOrg, suite.testRepo, &github.ListOptions{PerPage: 100})
 	suite.NoError(err)
 	for _, hook := range hooks {

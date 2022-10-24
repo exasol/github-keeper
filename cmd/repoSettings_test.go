@@ -16,7 +16,7 @@ func TestRepoSettingsSuite(t *testing.T) {
 	suite.Run(t, new(RepoSettingsSuite))
 }
 
-func (suite RepoSettingsSuite) TestInvalidSettings() {
+func (suite *RepoSettingsSuite) TestInvalidSettings() {
 	suite.resetRepo()
 	verifier := RepoSettingsVerifier{repo: suite.testRepo, org: suite.testOrg, githubClient: suite.githubClient}
 	output := suite.CaptureOutput(func() {
@@ -25,7 +25,7 @@ func (suite RepoSettingsSuite) TestInvalidSettings() {
 	suite.Equal(output, "The repository testing-release-robot has outdated repo settings.\nThe repository testing-release-robot does not enable Dependabot alerts.\n")
 }
 
-func (suite RepoSettingsSuite) TestFix() {
+func (suite *RepoSettingsSuite) TestFix() {
 	suite.resetRepo()
 	verifier := RepoSettingsVerifier{repo: suite.testRepo, org: suite.testOrg, githubClient: suite.githubClient}
 	verifier.VerifyRepoSettings(true)
@@ -38,7 +38,7 @@ func (suite RepoSettingsSuite) TestFix() {
 	suite.Assert().True(enabled)
 }
 
-func (suite RepoSettingsSuite) TestSettingsValidAfterFix() {
+func (suite *RepoSettingsSuite) TestSettingsValidAfterFix() {
 	suite.resetRepo()
 	verifier := RepoSettingsVerifier{repo: suite.testRepo, org: suite.testOrg, githubClient: suite.githubClient}
 	verifier.VerifyRepoSettings(true)
@@ -48,7 +48,7 @@ func (suite RepoSettingsSuite) TestSettingsValidAfterFix() {
 	suite.Equal(output, "")
 }
 
-func (suite RepoSettingsSuite) resetRepo() {
+func (suite *RepoSettingsSuite) resetRepo() {
 	falsePointer := false
 	_, _, err := suite.githubClient.Repositories.Edit(context.Background(), suite.testOrg, suite.testRepo, &github.Repository{AllowAutoMerge: &falsePointer, DeleteBranchOnMerge: &falsePointer})
 	suite.NoError(err)
