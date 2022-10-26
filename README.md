@@ -3,6 +3,7 @@
 GitHub keeper is a CLI tool that helps to unify our repositories.
 
 [![Build Status](https://github.com/exasol/github-keeper/actions/workflows/ci-build.yml/badge.svg)](https://github.com/exasol/github-keeper/actions/workflows/ci-build.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/exasol/github-keeper.svg)](https://pkg.go.dev/github.com/exasol/github-keeper)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=com.exasol%3Agithub-keeper&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=com.exasol%3Agithub-keeper)
 
 ## Features
@@ -11,22 +12,47 @@ GitHub keeper is a CLI tool that helps to unify our repositories.
 * List all Exasol repositories that are not archived and where you are admin.
 * Inspect and fix settings of a GitHub repository regarding labels, branch protection and actions.
 
-## Installation
+## Usage
 
-1. Install Go language. Minimum version is 1.13.
-   * On Debian / Ubuntu:
-       ```shell
-       sudo apt install golang-go
-       ```
-   * On macOS:
-       ```shell
-       brew install golang
-       ```
-2. Install dependendent packages:
+### Preconditions
+
+Install Go language. Minimum version is 1.18.
+* On Debian / Ubuntu:
     ```shell
-    cd $HOME/<PATH TO THIS REPO>/
-    go get ./...
+    sudo apt install golang-go
     ```
+* On macOS:
+    ```shell
+    brew install golang
+    ```
+
+### Install Without Sources
+
+If you only want to use github-keeper, run the following command:
+
+```shell
+go install github.com/exasol/github-keeper@main
+```
+
+This will install it to `$(go env GOPATH)/bin/github-keeper`.
+
+### Install With Sources for Development
+
+Checkout sources and install dependent packages:
+
+```shell
+git clone https://github.com/exasol/github-keeper.git
+cd github-keeper
+go get ./...
+```
+
+You can install github-keeper to `$(go env GOPATH)/bin/github-keeper` by running:
+
+```shell
+go install
+```
+
+After adding `$(go env GOPATH)/bin/` to your `PATH` you can run github-keeper by just calling `github-keeper`.
 
 ## Configuration
 
@@ -40,28 +66,25 @@ The url can be found in the keeper-vault.
 
 ## Usage
 
-In the github-keeper directory run:
+If you want to run github-keeper from the source code, replace the `github-keeper` command with `go run .`.
 
-```shell
-go run .
-```
-
-| Command | Description |
-|---------|-------------|
-| `go run . help command` | Display command line help |
-| `go run .  reactivate-scheduled-github-actions`|  Reactivate the scheduled GitHub actions for the given repository. |
-| `go run . completion <shell>` | Generate autocompletion script for shell `<shell>` |
-| `go run . list-my-repos` | List all Exasol repositories where you are admin |
-| `go run . configure-repo <repo-name> [more repo names] [flags]` | Inspect settings of GitHub repository |
+| Command                                                              | Description                                                       |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `github-keeper help command`                                         | Display command line help                                         |
+| `github-keeper reactivate-scheduled-github-actions`                  | Reactivate the scheduled GitHub actions for the given repository. |
+| `github-keeper completion <shell>`                                   | Generate autocompletion script for shell `<shell>`                |
+| `github-keeper list-my-repos`                                        | List all Exasol repositories where you are admin                  |
+| `github-keeper configure-repo <repo-name> [more repo names] [flags]` | Inspect settings of GitHub repository                             |
 
 ### `list-my-repos`
+
 List all repositories of the Exasol organization where I'm the admin and that are not archived.
 
 Usage: `github-keeper list-my-repos [flags]`
 
-| Flags | Description |
-|-------|-------------|
-|  `-h`, `--help`  | help |
+| Flags          | Description |
+| -------------- | ----------- |
+| `-h`, `--help` | Help        |
 
 ### `reactivate-scheduled-github-actions`
 
@@ -69,26 +92,27 @@ Reenable scheduled actions automatically disabled by GitHub after some time.
 
 Usage: `github-keeper reactivate-scheduled-github-actions <repo-name> [flags]`
 
-| Flags | Description |
-|-------|-------------|
-|  `-h`, `--help`  | help |
+| Flags          | Description |
+| -------------- | ----------- |
+| `-h`, `--help` | Help        |
 
 ### `configure-repo`
+
 Verify the config of a given repository
 
 Usage: `github-keeper configure-repo <repo-name> [more repo names] [flags]`
 
-| Flags | Description |
-|-------|-------------|
-| `--fix` | If this flag is set, github-keeper fixed the findings. Otherwise it just prints the diff. |
-|  `-h`, `--help`  | help |
-| `--secrets string` | Use a different secrets file location (default `~/.github-keeper/secrets.yml` |
+| Flags              | Description                                                                               |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| `--fix`            | If this flag is set, github-keeper fixed the findings. Otherwise it just prints the diff. |
+| `-h`, `--help`     | Help                                                                                      |
+| `--secrets string` | Use a different secrets file location (default `~/.github-keeper/secrets.yml`             |
 
 
 Hint: To verify the setup of all your repos use:
 
 ```shell
-go run . configure-repo $(go run . list-my-repos)
+github-keeper configure-repo $(github-keeper list-my-repos)
 ```
 
 ### `completion`
@@ -104,39 +128,28 @@ Supported Shells:
 * powershell
 * zsh
 
-| Flags | Description |
-|-------|-------------|
-|  `-h`, `--help`  | help |
+| Flags          | Description |
+| -------------- | ----------- |
+| `-h`, `--help` | help        |
 
 Use `github-keeper help completion [shell]` for more information about a generating completion for a specific shell.
 
-## Installation
-
-You can install github-keeper to `$HOME/go/bin/github-keeper` by running:
-
-```shell
-go install
-```
-
-After adding `$HOME/go/bin/` to your `PATH` you can run github-keeper by just calling `github-keeper`.
-
 ### Tips
 
-List all repos of the integration team:
+List all repos of the Exasol integration team:
 
 ```shell
-gh repo list exasol --limit 500 --json name,repositoryTopics --jq '.[] \
-   | select(.repositoryTopics.[]?.name == "exasol-integration") \
-   | .name' | tr "\n" " "
+gh repo list exasol --limit 500 --json name,repositoryTopics --jq \
+    '.[] | select(.repositoryTopics.[]?.name == "exasol-integration") | .name' \
+    | tr "\n" " "
 ```
 
-Check if a repo has disabled GitHub Actions:
+Reactivate disabled scheduled GitHub Actions:
 
 ```shell
-gh repo list exasol --limit 500 --json name,repositoryTopics --jq '.[] \
-   | select(.repositoryTopics.[]?.name == "exasol-integration") \
-   | .name' | tr "\n" " " \
-   | xargs go run . reactivate-scheduled-github-actions
+gh repo list exasol --limit 500 --json name,repositoryTopics --jq \
+    '.[] | select(.repositoryTopics.[]?.name == "exasol-integration") | .name' | tr "\n" " " \
+    | xargs github-keeper reactivate-scheduled-github-actions
 ```
 
 ## Additional Information
