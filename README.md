@@ -66,7 +66,7 @@ The url can be found in the keeper-vault.
 
 ## Usage
 
-If you want to run github-keeper from source, replace the `github-keeper` command with `go run .`.
+If you want to run github-keeper from the source code, replace the `github-keeper` command with `go run .`.
 
 | Command                                                              | Description |
 |----------------------------------------------------------------------|-------------|
