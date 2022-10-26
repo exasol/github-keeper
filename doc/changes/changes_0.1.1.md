@@ -28,8 +28,9 @@ generated branch protection rules, please use strings (`3.75`) as parameters.
 
 * Updated `golang:1.13` to `1.18`
 * Updated `golang.org/x/oauth2:v0.0.0-20211104180415-d3ed0bb246c8` to `v0.1.0`
-* Updated `github.com/spf13/cobra:v1.3.0` to `v1.6.0`
+* Updated `github.com/spf13/cobra:v1.3.0` to `v1.6.1`
 * Updated `gopkg.in/yaml.v3:v3.0.0-20210107192922-496545a6307b` to `v3.0.1`
+* Removed `gopkg.in/yaml.v2:v2.4.0`
 
 ### Test Dependency Updates
 
