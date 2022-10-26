@@ -68,13 +68,13 @@ The url can be found in the keeper-vault.
 
 If you want to run github-keeper from source, replace the `github-keeper` command with `go run .`.
 
-| Command                                                              | Description |
-|----------------------------------------------------------------------|-------------|
-| `github-keeper help command`                                         | Display command line help |
-| `github-keeper reactivate-scheduled-github-actions`                  |  Reactivate the scheduled GitHub actions for the given repository. |
-| `github-keeper completion <shell>`                                   | Generate autocompletion script for shell `<shell>` |
-| `github-keeper list-my-repos`                                        | List all Exasol repositories where you are admin |
-| `github-keeper configure-repo <repo-name> [more repo names] [flags]` | Inspect settings of GitHub repository |
+| Command                                                              | Description                                                       |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `github-keeper help command`                                         | Display command line help                                         |
+| `github-keeper reactivate-scheduled-github-actions`                  | Reactivate the scheduled GitHub actions for the given repository. |
+| `github-keeper completion <shell>`                                   | Generate autocompletion script for shell `<shell>`                |
+| `github-keeper list-my-repos`                                        | List all Exasol repositories where you are admin                  |
+| `github-keeper configure-repo <repo-name> [more repo names] [flags]` | Inspect settings of GitHub repository                             |
 
 ### `list-my-repos`
 
@@ -82,9 +82,9 @@ List all repositories of the Exasol organization where I'm the admin and that ar
 
 Usage: `github-keeper list-my-repos [flags]`
 
-| Flags            | Description |
-|------------------|-------------|
-|  `-h`, `--help`  | Help        |
+| Flags          | Description |
+| -------------- | ----------- |
+| `-h`, `--help` | Help        |
 
 ### `reactivate-scheduled-github-actions`
 
@@ -92,9 +92,9 @@ Reenable scheduled actions automatically disabled by GitHub after some time.
 
 Usage: `github-keeper reactivate-scheduled-github-actions <repo-name> [flags]`
 
-| Flags            | Description |
-|------------------|-------------|
-|  `-h`, `--help`  | Help        |
+| Flags          | Description |
+| -------------- | ----------- |
+| `-h`, `--help` | Help        |
 
 ### `configure-repo`
 
@@ -102,11 +102,11 @@ Verify the config of a given repository
 
 Usage: `github-keeper configure-repo <repo-name> [more repo names] [flags]`
 
-| Flags              | Description |
-|--------------------|-------------|
+| Flags              | Description                                                                               |
+| ------------------ | ----------------------------------------------------------------------------------------- |
 | `--fix`            | If this flag is set, github-keeper fixed the findings. Otherwise it just prints the diff. |
-|  `-h`, `--help`    | Help |
-| `--secrets string` | Use a different secrets file location (default `~/.github-keeper/secrets.yml` |
+| `-h`, `--help`     | Help                                                                                      |
+| `--secrets string` | Use a different secrets file location (default `~/.github-keeper/secrets.yml`             |
 
 
 Hint: To verify the setup of all your repos use:
@@ -128,9 +128,9 @@ Supported Shells:
 * powershell
 * zsh
 
-| Flags | Description |
-|-------|-------------|
-|  `-h`, `--help`  | help |
+| Flags          | Description |
+| -------------- | ----------- |
+| `-h`, `--help` | help        |
 
 Use `github-keeper help completion [shell]` for more information about a generating completion for a specific shell.
 
