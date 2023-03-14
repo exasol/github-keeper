@@ -160,7 +160,7 @@ func getTriggersOfWorkflowDefinition(parsedYaml *workflowDefinitionInt) (*Trigge
 	} else if triggersFromMap := tryReadingTriggersFromMap(parsedYaml.On); triggersFromMap != nil {
 		return triggersFromMap, nil
 	} else {
-		return nil, fmt.Errorf("the GitHub workflow '%v'uses an unsupported trigger definition style", parsedYaml.Name)
+		return nil, fmt.Errorf("the GitHub workflow '%v' uses an unsupported trigger definition style: %v", parsedYaml.Name, parsedYaml.On)
 	}
 }
 
@@ -182,11 +182,11 @@ func tryReadingTriggersFromArray(parsedYaml interface{}) *TriggerDefinition {
 }
 
 func tryReadingTriggersFromMap(parsedYaml interface{}) *TriggerDefinition {
-	triggersAsMap, ok := parsedYaml.(map[interface{}]interface{})
+	triggersAsMap, ok := parsedYaml.(map[string]interface{})
 	if ok {
 		var result TriggerDefinition
 		for trigger, triggerParams := range triggersAsMap {
-			lowerTrigger := strings.ToLower(trigger.(string))
+			lowerTrigger := strings.ToLower(trigger)
 			if lowerTrigger == "pull_request" {
 				result.TriggerOnPr = true
 			} else if lowerTrigger == "push" {
