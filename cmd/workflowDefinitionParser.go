@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"reflect"
 	"regexp"
 	"strings"
 
@@ -119,12 +118,11 @@ func replaceSpecificParameterInJobName(jobName string, value interface{}, patter
 		return pattern.ReplaceAllString(jobName, fmt.Sprintf("%d", value))
 	case bool:
 		return pattern.ReplaceAllString(jobName, fmt.Sprintf("%t", value))
-	case map[interface{}]interface{}:
+	case map[string]interface{}:
 		filledJobName := jobName
 		for objectKey, objectValue := range value {
-			objectKeyString := objectKey.(string)
 			objectValueString := convertValueToString(objectValue)
-			objectPattern, err := regexp.Compile("\\${\\{\\s*matrix.\\Q" + objectKeyString + "\\E\\s*\\}\\}")
+			objectPattern, err := regexp.Compile("\\${\\{\\s*matrix.\\Q" + objectKey + "\\E\\s*\\}\\}")
 			if err != nil {
 				panic(err)
 			}
@@ -132,7 +130,7 @@ func replaceSpecificParameterInJobName(jobName string, value interface{}, patter
 		}
 		return filledJobName
 	default:
-		panic(fmt.Sprintf("unsupported type %v", reflect.TypeOf(value)))
+		panic(fmt.Sprintf("unsupported value %v of type %T", value, value))
 	}
 }
 
