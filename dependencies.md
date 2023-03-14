@@ -19,7 +19,7 @@
 
 [0]: https://github.com/alyu/configparser/blob/744e9a66e7bc/LICENSE
 [1]: https://github.com/spf13/cobra/blob/v1.6.1/LICENSE.txt
-[2]: https://cs.opensource.google/go/x/oauth2/+/v0.1.0:LICENSE
+[2]: https://cs.opensource.google/go/x/oauth2/+/v0.6.0:LICENSE
 [3]: https://github.com/go-yaml/yaml/blob/v3.0.1/LICENSE
 [4]: https://github.com/google/go-github/blob/v43.0.0/LICENSE
 [5]: https://github.com/stretchr/testify/blob/HEAD/LICENSE
