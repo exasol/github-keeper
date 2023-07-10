@@ -6,6 +6,10 @@ GitHub keeper is a CLI tool that helps to unify our repositories.
 [![Go Reference](https://pkg.go.dev/badge/github.com/exasol/github-keeper.svg)](https://pkg.go.dev/github.com/exasol/github-keeper)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=com.exasol%3Agithub-keeper&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=com.exasol%3Agithub-keeper)
 
+## This Repository is Obsolete
+
+⚠ We archived this repository since it is not maintained any more. ⚠
+
 ## Features
 
 * Reactivate scheduled GitHub actions that have been automatically disabled by GitHub after some time.
