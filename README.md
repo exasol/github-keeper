@@ -8,7 +8,7 @@ GitHub keeper is a CLI tool that helps to unify our repositories.
 
 ## This Repository is Obsolete
 
-⚠ We archived this respository since the functionallity is now superseeded by the [github-issue-adapter](https://github.com/exasol/github-issue-adapter). ⚠
+⚠ We archived this repository since it is not maintained any more. ⚠
 
 ## Features
 
